@@ -1,0 +1,60 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: enermesh-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: enermesh
+      POSTGRES_PASSWORD: enermesh
+      POSTGRES_DB: enermesh
+    ports:
+      - "5432:5432"
+    volumes:
+      - enermesh_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U enermesh -d enermesh"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: enermesh-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://enermesh:enermesh@postgres:5432/enermesh?schema=public
+      API_HOST: 0.0.0.0
+      API_PORT: 3001
+      WEB_ORIGIN: http://localhost:3000
+    ports:
+      - "3001:3001"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: enermesh-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: /api/v1
+      API_INTERNAL_URL: http://api:3001
+    ports:
+      - "3000:3000"
+
+volumes:
+  enermesh_pgdata:

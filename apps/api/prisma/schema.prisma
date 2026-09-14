@@ -1,0 +1,307 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  BUYER
+  SELLER
+  ADMIN
+}
+
+enum EnergyType {
+  SOLAR
+  WIND
+  HYDRO
+  BIOMASS
+  MIXED_RENEWABLE
+}
+
+enum ListingStatus {
+  ACTIVE
+  PARTIALLY_FILLED
+  SOLD_OUT
+  EXPIRED
+  CANCELLED
+}
+
+enum BidStatus {
+  OPEN
+  MATCHED
+  PARTIALLY_MATCHED
+  EXPIRED
+  CANCELLED
+  COMPLETED
+}
+
+enum MatchStatus {
+  PROPOSED
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  SETTLEMENT_PENDING
+  SETTLED
+  FAILED
+}
+
+enum TradeStatus {
+  DRAFT
+  AWAITING_SIGNATURE
+  PENDING
+  CONFIRMED
+  FAILED
+  REJECTED
+  COMPLETED
+}
+
+enum BlockchainTxStatus {
+  WAITING_FOR_SIGNATURE
+  PENDING
+  CONFIRMED
+  FAILED
+  REJECTED
+}
+
+enum NotificationType {
+  LISTING_CREATED
+  LISTING_UPDATED
+  BID_MATCHED
+  BID_EXPIRED
+  PURCHASE_PENDING
+  PURCHASE_CONFIRMED
+  PURCHASE_FAILED
+  SETTLEMENT_PENDING
+  SETTLEMENT_CONFIRMED
+  SETTLEMENT_FAILED
+  WALLET_CONNECTED
+  PRICE_CHANGED
+  SYSTEM
+}
+
+enum AuditAction {
+  USER_REGISTERED
+  USER_LOGIN
+  LISTING_CREATED
+  LISTING_UPDATED
+  LISTING_CANCELLED
+  BID_CREATED
+  BID_CANCELLED
+  MATCH_CREATED
+  TRADE_SETTLED
+  WALLET_LINKED
+  ADMIN_ACTION
+}
+
+enum DataSourceLabel {
+  ACTUAL
+  ESTIMATED
+  SIMULATED
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  role         UserRole
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  wallets         Wallet[]
+  listings        Listing[]         @relation("SellerListings")
+  bids            Bid[]             @relation("BuyerBids")
+  sellerMatches   Match[]           @relation("SellerMatches")
+  buyerMatches    Match[]           @relation("BuyerMatches")
+  sellerTrades    Trade[]           @relation("SellerTrades")
+  buyerTrades     Trade[]           @relation("BuyerTrades")
+  notifications   Notification[]
+  energyHistory   EnergyHistory[]
+  auditLogs       AuditLog[]
+  refreshTokens   RefreshToken[]
+
+  @@index([role])
+  @@index([email])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Wallet {
+  id            String   @id @default(uuid())
+  userId        String
+  address       String   @unique
+  chainId       Int
+  isPrimary     Boolean  @default(true)
+  verifiedAt    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([address, chainId])
+}
+
+model Listing {
+  id                    String        @id @default(uuid())
+  sellerId              String
+  energyType            EnergyType
+  originalQuantityKwh   Decimal       @db.Decimal(18, 3)
+  availableQuantityKwh  Decimal       @db.Decimal(18, 3)
+  soldQuantityKwh       Decimal       @default(0) @db.Decimal(18, 3)
+  minTradeKwh           Decimal       @db.Decimal(18, 3)
+  maxTradeKwh           Decimal       @db.Decimal(18, 3)
+  pricePerKwh           Decimal       @db.Decimal(18, 6)
+  location              String
+  marketZone            String
+  availableFrom         DateTime
+  availableUntil        DateTime
+  status                ListingStatus @default(ACTIVE)
+  onChainListingId      String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+  seller                User          @relation("SellerListings", fields: [sellerId], references: [id])
+  bids                  Bid[]
+  matches               Match[]
+
+  @@index([status, marketZone, energyType])
+  @@index([sellerId])
+  @@index([availableFrom, availableUntil])
+  @@index([pricePerKwh])
+}
+
+model Bid {
+  id               String     @id @default(uuid())
+  buyerId          String
+  listingId        String?
+  requestedKwh     Decimal    @db.Decimal(18, 3)
+  unmatchedKwh     Decimal    @db.Decimal(18, 3)
+  matchedKwh       Decimal    @default(0) @db.Decimal(18, 3)
+  maxPricePerKwh   Decimal    @db.Decimal(18, 6)
+  energyType       EnergyType
+  marketZone       String
+  requiredFrom     DateTime
+  requiredUntil    DateTime
+  status           BidStatus  @default(OPEN)
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  buyer            User       @relation("BuyerBids", fields: [buyerId], references: [id])
+  listing          Listing?   @relation(fields: [listingId], references: [id])
+  matches          Match[]
+
+  @@index([status, marketZone, energyType])
+  @@index([buyerId])
+  @@index([listingId])
+}
+
+model Match {
+  id            String      @id @default(uuid())
+  listingId     String
+  bidId         String
+  sellerId      String
+  buyerId       String
+  matchedKwh    Decimal     @db.Decimal(18, 3)
+  pricePerKwh   Decimal     @db.Decimal(18, 6)
+  status        MatchStatus @default(PROPOSED)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  listing       Listing     @relation(fields: [listingId], references: [id])
+  bid           Bid         @relation(fields: [bidId], references: [id])
+  seller        User        @relation("SellerMatches", fields: [sellerId], references: [id])
+  buyer         User        @relation("BuyerMatches", fields: [buyerId], references: [id])
+  trades        Trade[]
+
+  @@index([status])
+  @@index([listingId, bidId])
+  @@unique([listingId, bidId, createdAt])
+}
+
+model Trade {
+  id                  String              @id @default(uuid())
+  matchId             String
+  buyerId             String
+  sellerId            String
+  quantityKwh         Decimal             @db.Decimal(18, 3)
+  pricePerKwh         Decimal             @db.Decimal(18, 6)
+  totalAmount         Decimal             @db.Decimal(18, 6)
+  status              TradeStatus         @default(DRAFT)
+  blockchainTxStatus  BlockchainTxStatus  @default(WAITING_FOR_SIGNATURE)
+  txHash              String?             @unique
+  blockNumber         Int?
+  contractAddress     String?
+  network             String?
+  chainId             Int?
+  gasUsed             String?
+  confirmationStatus  String?
+  settledAt           DateTime?
+  idempotencyKey      String              @unique
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  match               Match               @relation(fields: [matchId], references: [id])
+  buyer               User                @relation("BuyerTrades", fields: [buyerId], references: [id])
+  seller              User                @relation("SellerTrades", fields: [sellerId], references: [id])
+
+  @@index([status, blockchainTxStatus])
+  @@index([buyerId])
+  @@index([sellerId])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  userId    String
+  type      NotificationType
+  title     String
+  body      String
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([createdAt])
+}
+
+model EnergyHistory {
+  id          String          @id @default(uuid())
+  userId      String
+  deviceId    String?
+  kwh         Decimal         @db.Decimal(18, 3)
+  recordedAt  DateTime
+  sourceLabel DataSourceLabel @default(ACTUAL)
+  metadata    Json?
+  createdAt   DateTime        @default(now())
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, recordedAt])
+  @@index([deviceId])
+}
+
+model AuditLog {
+  id         String      @id @default(uuid())
+  userId     String?
+  action     AuditAction
+  entityType String
+  entityId   String?
+  ipAddress  String?
+  metadata   Json?
+  createdAt  DateTime    @default(now())
+  user       User?       @relation(fields: [userId], references: [id])
+
+  @@index([action, createdAt])
+  @@index([entityType, entityId])
+  @@index([userId])
+}

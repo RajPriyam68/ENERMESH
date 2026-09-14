@@ -1,0 +1,24 @@
+{
+  "name": "@enermesh/contracts",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "compile": "hardhat compile",
+    "build": "hardhat compile",
+    "test": "hardhat compile",
+    "typecheck": "hardhat compile",
+    "lint": "solhint 'contracts/**/*.sol'"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",
+    "@nomicfoundation/hardhat-ethers": "^3.0.8",
+    "@openzeppelin/contracts": "^5.2.0",
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.13.10",
+    "chai": "^4.5.0",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.19",
+    "solhint": "^5.0.5"
+  }
+}

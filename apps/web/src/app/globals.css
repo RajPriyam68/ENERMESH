@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f4f7f5;
+  --foreground: #12201b;
+  --card: #ffffff;
+  --muted: #5b6b64;
+  --border: #d7e0db;
+  --primary: #0f6b4c;
+  --primary-foreground: #f5fbf8;
+  --accent: #148f68;
+  --ring: #0f6b4c;
+  --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--background);
+  color: var(--foreground);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+a:focus-visible,
+button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}

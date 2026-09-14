@@ -104,6 +104,15 @@
 *.log
 **/logs/
 
+# Next.js / Hardhat / Prisma
+**/.next/
+**/out/
+**/artifacts/
+**/cache/
+**/typechain-types/
+**/coverage/
+**/generated/prisma/
+
 # Environment and secrets
 **/.env
 **/.env.local

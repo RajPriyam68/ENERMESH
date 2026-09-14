@@ -1,0 +1,32 @@
+{
+  "name": "enermesh",
+  "version": "0.1.0",
+  "private": true,
+  "description": "EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Marketplace with Intelligent Matching, Dynamic Price Discovery, and Transparent Settlement",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:api & npm run dev:web",
+    "dev:web": "npm run build:shared && npm run dev -w apps/web",
+    "dev:api": "npm run build:shared && npm run dev -w apps/api",
+    "build": "npm run build -w packages/shared && npm run build -w apps/api && npm run build -w apps/web && npm run build -w packages/contracts",
+    "build:shared": "npm run build -w packages/shared",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run prisma:generate -w apps/api",
+    "db:migrate": "npm run prisma:migrate -w apps/api",
+    "db:push": "npm run prisma:push -w apps/api",
+    "contracts:compile": "npm run compile -w packages/contracts"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  },
+  "license": "MIT"
+}
