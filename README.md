@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S1 — Auth / RBAC** is complete. Next is **S2 — Seller listings + buyer browse**. See `docs/PROJECT_STATE.md`.
+**S2 — Marketplace / Seller Offers** is complete. Next is **S3 — Bids + matching**. See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 

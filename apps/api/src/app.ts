@@ -11,6 +11,7 @@ import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
 import { healthRouter } from "./routes/health.js";
 import { usersRouter } from "./routes/users.js";
+import { listingsRouter } from "./routes/listings.js";
 import { walletsRouter } from "./routes/wallets.js";
 
 export function createApp() {
@@ -57,6 +58,7 @@ export function createApp() {
   app.use(`${API_PREFIX}/auth`, authRouter);
   app.use(`${API_PREFIX}/users`, usersRouter);
   app.use(`${API_PREFIX}/wallets`, walletsRouter);
+  app.use(`${API_PREFIX}/listings`, listingsRouter);
   app.use(`${API_PREFIX}/admin`, adminRouter);
   app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(openApiDocument));
 

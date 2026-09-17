@@ -35,7 +35,12 @@ export async function startTestServer(): Promise<TestServer> {
 
 export interface ApiResponse<T = unknown> {
   status: number;
-  body: { success: boolean; data?: T; error?: { code: string; message: string } };
+  body: {
+    success: boolean;
+    data?: T;
+    meta?: { page?: number; pageSize?: number; total?: number; totalPages?: number };
+    error?: { code: string; message: string };
+  };
   setCookie: string[];
 }
 

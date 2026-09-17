@@ -31,9 +31,17 @@
 
 Integration tests skip automatically when PostgreSQL is unreachable, rather than inventing a live database.
 
+## S2 coverage
+
+- Quantity integrity: balanced triple, oversell, available+sold mismatch, negatives, initialise sold=0, resize remaining without changing sold
+- Listing create: verified wallet required (409), buyer 403, unauthenticated 401, maxTrade > available 422, unknown sold field 422
+- Public browse: energy type / zone filter, price sort, page/pageSize/total/totalPages
+- Owner update does not invent sold volume; cross-seller edit 403; cancel hides from public browse; unknown id 404
+- Web: catalog query encoding, datetime-local round-trip, protected `/offers` paths
+
 ## Planned (later sprints)
 
-Listing quantity constraints, bid lifecycle, matching races, expiration, overselling, invalid payment, wrong network, user rejection, RPC failure, revert, duplicate settlement, Socket.IO privilege isolation.
+Bid lifecycle, matching races, expiration vs matching, overselling at match time, invalid payment, wrong network, user rejection, RPC failure, revert, duplicate settlement, Socket.IO privilege isolation.
 
 ## Commands
 

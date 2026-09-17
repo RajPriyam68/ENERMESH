@@ -22,6 +22,11 @@ export function AuthNav() {
           <p className="font-medium text-foreground">{user.displayName}</p>
           <p className="text-muted">{user.role}</p>
         </div>
+        {user.role === "SELLER" || user.role === "ADMIN" ? (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/offers">Offers</Link>
+          </Button>
+        ) : null}
         <Button variant="ghost" size="sm" asChild>
           <Link href="/profile">Profile</Link>
         </Button>

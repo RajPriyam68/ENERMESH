@@ -31,9 +31,11 @@ describe("loginHref", () => {
 });
 
 describe("isProtectedPath", () => {
-  it("covers profile and settings routes", () => {
+  it("covers profile, settings and seller offer routes", () => {
     assert.equal(isProtectedPath("/profile"), true);
     assert.equal(isProtectedPath("/settings"), true);
+    assert.equal(isProtectedPath("/offers"), true);
+    assert.equal(isProtectedPath("/offers/new"), true);
     assert.equal(isProtectedPath("/marketplace"), false);
   });
 });

@@ -78,9 +78,24 @@ Admin accounts are never self-assigned. Provision the first one out-of-band:
 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='ChangeMe123' npm run seed:admin
 ```
 
+### Listings (S2)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/listings` | public | Browse ACTIVE/PARTIALLY_FILLED listings; filter, sort, paginate |
+| GET | `/api/v1/listings/mine` | SELLER/ADMIN | Seller inventory including cancelled and expired |
+| GET | `/api/v1/listings/:id` | public | Listing detail; expires the row on read if the window has passed |
+| POST | `/api/v1/listings` | SELLER/ADMIN + verified wallet | Publish an offer; sold kWh is always 0 |
+| PATCH | `/api/v1/listings/:id` | owner or ADMIN | Update remaining kWh and offer fields; sold kWh cannot be set |
+| POST | `/api/v1/listings/:id/cancel` | owner or ADMIN | Cancel an ACTIVE or PARTIALLY_FILLED listing |
+
+List responses include `listings`, `page`, `pageSize`, `total`, `totalPages` in `data` and the same pagination fields in `meta`.
+
+Create without a verified wallet returns 409 `WALLET_REQUIRED`. Unknown fields such as `soldQuantityKwh` return 422. Quantity integrity failures return 409 `QUANTITY_INTEGRITY`.
+
 ## Planned surface (later sprints)
 
-`/listings`, `/bids`, `/matches`, `/transactions`, `/dashboard`, `/analytics`, `/notifications`, `/reports`,
+`/bids`, `/matches`, `/transactions`, `/dashboard`, `/analytics`, `/notifications`, `/reports`,
 `/ai`, `/iot`.
 
 All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.

@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 1 exposes health, authentication with RBAC, profile/settings, and wallet signature verification. Marketplace, matching, and settlement arrive in later sprints.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 2 adds seller listings with quantity integrity and public browse/filter/sort/paginate. Matching and settlement arrive in later sprints.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -200,6 +200,86 @@ export const openApiDocument = {
         responses: {
           "200": envelope("Wallet unlinked"),
           "404": envelope("Wallet not found for this account"),
+        },
+      },
+    },
+    "/listings": {
+      get: {
+        summary: "Browse public listings",
+        tags: ["Listings"],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "energyType", in: "query", schema: { type: "string" } },
+          { name: "marketZone", in: "query", schema: { type: "string" } },
+          { name: "minPrice", in: "query", schema: { type: "number" } },
+          { name: "maxPrice", in: "query", schema: { type: "number" } },
+          { name: "minKwh", in: "query", schema: { type: "number" } },
+          { name: "sortBy", in: "query", schema: { type: "string" } },
+          { name: "sortOrder", in: "query", schema: { type: "string", enum: ["asc", "desc"] } },
+          { name: "q", in: "query", schema: { type: "string" } },
+        ],
+        responses: { "200": envelope("Paginated public listings") },
+      },
+      post: {
+        summary: "Publish a seller listing",
+        tags: ["Listings"],
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonBody("energyType, availableKwh, min/max trade, price, location, zone, window"),
+        responses: {
+          "201": envelope("Listing created"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Seller or admin role required"),
+          "409": envelope("Verified wallet required or quantity conflict"),
+          "422": envelope("Validation failed"),
+        },
+      },
+    },
+    "/listings/mine": {
+      get: {
+        summary: "List the current seller's listings including cancelled and expired",
+        tags: ["Listings"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": envelope("Seller listings"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Seller or admin role required"),
+        },
+      },
+    },
+    "/listings/{id}": {
+      get: {
+        summary: "Listing detail",
+        tags: ["Listings"],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: { "200": envelope("Listing"), "404": envelope("Not found") },
+      },
+      patch: {
+        summary: "Update an owned listing",
+        tags: ["Listings"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: jsonBody("Partial listing fields. soldQuantityKwh cannot be set."),
+        responses: {
+          "200": envelope("Updated listing"),
+          "403": envelope("Not the owner"),
+          "404": envelope("Not found"),
+          "409": envelope("Not editable"),
+          "422": envelope("Validation failed"),
+        },
+      },
+    },
+    "/listings/{id}/cancel": {
+      post: {
+        summary: "Cancel an owned listing",
+        tags: ["Listings"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": envelope("Cancelled listing"),
+          "403": envelope("Not the owner"),
+          "404": envelope("Not found"),
+          "409": envelope("Not cancellable"),
         },
       },
     },

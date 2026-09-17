@@ -59,6 +59,7 @@ export interface PublicUser {
 export interface ListingPublic {
   id: string;
   sellerId: string;
+  sellerDisplayName: string;
   energyType: EnergyType;
   originalQuantityKwh: number;
   availableQuantityKwh: number;
@@ -72,6 +73,7 @@ export interface ListingPublic {
   availableUntil: string;
   status: ListingStatus;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface BidPublic {

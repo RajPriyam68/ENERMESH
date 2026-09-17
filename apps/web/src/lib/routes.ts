@@ -19,7 +19,7 @@ export function loginHref(nextPath?: string): string {
   return `/login?next=${encodeURIComponent(sanitizeNextPath(nextPath))}`;
 }
 
-export const PROTECTED_PATHS = ["/profile", "/settings"] as const;
+export const PROTECTED_PATHS = ["/profile", "/settings", "/offers"] as const;
 
 export function isProtectedPath(pathname: string): boolean {
   return PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
