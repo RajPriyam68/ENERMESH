@@ -4,15 +4,20 @@ import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import { API_PREFIX } from "@enermesh/shared";
-import { env } from "./config/env.js";
+import { env, trustProxySetting } from "./config/env.js";
 import { openApiDocument } from "./docs/openapi.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
+import { adminRouter } from "./routes/admin.js";
+import { authRouter } from "./routes/auth.js";
 import { healthRouter } from "./routes/health.js";
+import { usersRouter } from "./routes/users.js";
+import { walletsRouter } from "./routes/wallets.js";
 
 export function createApp() {
   const app = express();
 
   app.disable("x-powered-by");
+  app.set("trust proxy", trustProxySetting(env.TRUST_PROXY));
   app.use(
     helmet({
       contentSecurityPolicy: false,
@@ -32,6 +37,7 @@ export function createApp() {
       limit: 120,
       standardHeaders: true,
       legacyHeaders: false,
+      skip: () => env.NODE_ENV === "test",
     }),
   );
 
@@ -48,6 +54,10 @@ export function createApp() {
   });
 
   app.use(API_PREFIX, healthRouter);
+  app.use(`${API_PREFIX}/auth`, authRouter);
+  app.use(`${API_PREFIX}/users`, usersRouter);
+  app.use(`${API_PREFIX}/wallets`, walletsRouter);
+  app.use(`${API_PREFIX}/admin`, adminRouter);
   app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
   app.use(notFound);

@@ -7,6 +7,12 @@ const envSchema = z.object({
   API_PUBLIC_URL: z.string().default("http://localhost:3001"),
   WEB_ORIGIN: z.string().default("http://localhost:3000"),
   LOG_LEVEL: z.string().default("info"),
+  /**
+   * Express `trust proxy`. Leave "false" when the API is directly reachable;
+   * set to the number of proxy hops (or a subnet) when deployed behind one.
+   * Enabling it incorrectly lets clients spoof X-Forwarded-For and evade limits.
+   */
+  TRUST_PROXY: z.string().default("false"),
   DATABASE_URL: z.string().min(1).default("postgresql://enermesh:enermesh@localhost:5432/enermesh?schema=public"),
   JWT_ACCESS_SECRET: z.string().min(16).default("dev-access-secret-change-me-32"),
   JWT_REFRESH_SECRET: z.string().min(16).default("dev-refresh-secret-change-me-32"),
@@ -33,6 +39,16 @@ export function loadEnv(): Env {
     process.env.DATABASE_URL = parsed.data.DATABASE_URL;
   }
   return parsed.data;
+}
+
+/** Parses TRUST_PROXY without silently trusting an unparsable value. */
+export function trustProxySetting(value: string): boolean | number | string {
+  const trimmed = value.trim();
+  if (trimmed === "true") return true;
+  if (trimmed === "false" || trimmed === "") return false;
+  const hops = Number(trimmed);
+  if (Number.isInteger(hops) && hops >= 0) return hops;
+  return trimmed;
 }
 
 export const env = loadEnv();

@@ -15,6 +15,11 @@ const config: Config = {
           foreground: "var(--primary-foreground)",
         },
         accent: "var(--accent)",
+        danger: {
+          DEFAULT: "var(--danger)",
+          foreground: "var(--danger-foreground)",
+        },
+        success: "var(--success)",
       },
     },
   },

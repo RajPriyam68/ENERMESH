@@ -17,9 +17,24 @@ export function notFound(_req: Request, res: Response) {
   return fail(res, "NOT_FOUND", "Resource not found", 404);
 }
 
+/**
+ * Schemas are authored in @enermesh/shared, which may resolve a different zod
+ * instance than this app. instanceof alone is not reliable across workspace
+ * package boundaries, so fall back to the stable ZodError shape.
+ */
+function isZodError(err: unknown): err is ZodError {
+  if (err instanceof ZodError) return true;
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    (err as { name?: unknown }).name === "ZodError" &&
+    typeof (err as { flatten?: unknown }).flatten === "function"
+  );
+}
+
 export function errorHandler(err: unknown, _req: Request, res: Response, next: NextFunction) {
   void next;
-  if (err instanceof ZodError) {
+  if (isZodError(err)) {
     return fail(res, "VALIDATION_ERROR", "Request validation failed", 422, err.flatten());
   }
   if (err instanceof HttpError) {

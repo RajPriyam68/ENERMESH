@@ -12,6 +12,9 @@
   --primary-foreground: #f5fbf8;
   --accent: #148f68;
   --ring: #0f6b4c;
+  --danger: #b3261e;
+  --danger-foreground: #ffffff;
+  --success: #0f6b4c;
   --font-sans: "Source Sans 3", "Segoe UI", sans-serif;
 }
 

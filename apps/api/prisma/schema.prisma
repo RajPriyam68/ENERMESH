@@ -103,14 +103,21 @@ enum DataSourceLabel {
 }
 
 model User {
-  id           String    @id @default(uuid())
-  email        String    @unique
-  passwordHash String
-  displayName  String
-  role         UserRole
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id                   String     @id @default(uuid())
+  email                String     @unique
+  passwordHash         String
+  displayName          String
+  role                 UserRole
+  isActive             Boolean    @default(true)
+  phone                String?
+  bio                  String?
+  defaultMarketZone    String?
+  energyTypesOfInterest EnergyType[]
+  notificationEmail    Boolean    @default(true)
+  notificationInApp    Boolean    @default(true)
+  lastLoginAt          DateTime?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
 
   wallets         Wallet[]
   listings        Listing[]         @relation("SellerListings")
@@ -142,15 +149,18 @@ model RefreshToken {
 }
 
 model Wallet {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   userId        String
-  address       String   @unique
+  address       String    @unique
   chainId       Int
-  isPrimary     Boolean  @default(true)
+  isPrimary     Boolean   @default(true)
   verifiedAt    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nonce         String?
+  nonceIssuedAt DateTime?
+  nonceExpiresAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([address, chainId])

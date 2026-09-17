@@ -21,11 +21,12 @@ export const loginSchema = z.object({
 });
 
 export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(10),
+  refreshToken: z.string().min(10).optional(),
 });
 
 export const walletNonceSchema = z.object({
   address: walletAddressSchema,
+  chainId: z.coerce.number().int().positive().optional(),
 });
 
 export const walletVerifySchema = z.object({

@@ -2,11 +2,12 @@
 
 Provider: PostgreSQL 16 via Prisma. Connection string: `DATABASE_URL` (any compatible host).
 
-## Entities (S0 schema)
+## Entities (S1 schema)
 
-- **User** — email unique, bcrypt hash, role `BUYER | SELLER | ADMIN`, active flag
-- **RefreshToken** — hashed refresh tokens, expiry, revoke timestamp
-- **Wallet** — verified EVM address per user/chain, primary flag
+- **User** — email unique, bcrypt hash, role `BUYER | SELLER | ADMIN`, active flag, phone, bio,
+  default market zone, energy interests, notification preferences, last login
+- **RefreshToken** — SHA-256 hashed refresh tokens, expiry, revoke timestamp
+- **Wallet** — EVM address per user/chain, primary flag, verified timestamp, single-use nonce + issue/expiry
 - **Listing** — original/available/sold kWh, min/max trade size, price, zone, window, status
 - **Bid** — requested/unmatched/matched kWh, max price, type, zone, window, status
 - **Match** — listing+bid, matched kWh, price, status
@@ -31,11 +32,22 @@ Status+zone+type on listings and bids; time windows; price; user foreign keys; a
 
 ## Migrations
 
-S0 ships the Prisma schema. Apply when Postgres is available:
+S1 ships the initial versioned migration `prisma/migrations/20260916000000_s1_auth` (full schema), already
+baselined against the development database. For a fresh environment:
 
 ```bash
 npm run db:generate
+npm run db:deploy
+```
+
+For rapid local iteration without migration history:
+
+```bash
 npm run db:push
 ```
 
-Use `prisma migrate` in environments that require versioned SQL.
+Seed the first administrator out-of-band (never through public registration):
+
+```bash
+ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='ChangeMe123' npm run seed:admin
+```

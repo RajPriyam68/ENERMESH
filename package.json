@@ -19,6 +19,8 @@
     "db:generate": "npm run prisma:generate -w apps/api",
     "db:migrate": "npm run prisma:migrate -w apps/api",
     "db:push": "npm run prisma:push -w apps/api",
+    "db:deploy": "prisma migrate deploy --schema apps/api/prisma/schema.prisma",
+    "seed:admin": "npm run seed:admin -w apps/api",
     "contracts:compile": "npm run compile -w packages/contracts"
   },
   "devDependencies": {

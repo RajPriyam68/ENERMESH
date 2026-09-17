@@ -10,9 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S0 — Foundation and design** (in progress until this workspace is typechecked and built).
-
-Later sprints add auth, marketplace, matching, contracts, verification, realtime, analytics, AI, IoT, reports, security tests, and deployment polish. See `docs/PROJECT_STATE.md`.
+**S1 — Auth / RBAC** is complete. Next is **S2 — Seller listings + buyer browse**. See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 
@@ -45,8 +43,12 @@ cp .env.example .env
 # Optional: start PostgreSQL via Compose
 docker compose up -d postgres
 
-# Generate Prisma client
+# Generate Prisma client and apply schema
 npm run db:generate
+npm run db:push
+
+# Optional: first admin (never self-assigned through /register)
+ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='ChangeMe123' npm run seed:admin
 
 # Development (API :3001, web :3000 with /api reverse proxy)
 chmod +x start.sh

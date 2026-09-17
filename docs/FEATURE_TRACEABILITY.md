@@ -10,7 +10,11 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | API health / OpenAPI | S0 | `apps/api/src` | Liveness success rate |
 | Landing + empty marketplace | S0 | `apps/web/src/app` | No mocked volume |
 | Contract skeleton + pause | S0 | `packages/contracts` | Pause blocks calls |
-| Auth JWT/RBAC/wallet verify | S1 | planned | Auth failure rate |
+| Auth register/login/logout + JWT rotation | S1 | `apps/api/src/services/auth.service.ts`, `apps/api/src/routes/auth.ts` | Reuse attempts rejected = 100% |
+| RBAC (BUYER/SELLER/ADMIN) | S1 | `apps/api/src/middleware/auth.ts`, `apps/api/src/routes/admin.ts` | Cross-role 403 rate = 100% |
+| bcrypt password storage | S1 | `apps/api/src/lib/password.ts` | Plaintext/hash leakage = 0 |
+| Profile + settings + password change | S1 | `apps/api/src/services/user.service.ts`, `apps/web/src/components/auth` | Session invalidation on change |
+| Wallet nonce + signature verify | S1 | `apps/api/src/services/wallet.service.ts`, `apps/web/src/components/wallet/wallet-panel.tsx` | Replay accepted = 0 |
 | Listings + no oversell | S2 | planned | Oversell attempts blocked |
 | Bids + persistent matching | S3 | planned | Match success, time, unmatched kWh |
 | MetaMask + Solidity trade | S4 | planned | Rejection vs revert vs fail |

@@ -35,7 +35,9 @@ export interface Paginated<T> {
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+  tokenType: "Bearer";
   expiresIn: string;
+  accessExpiresAt: string;
 }
 
 export interface PublicUser {
@@ -43,6 +45,14 @@ export interface PublicUser {
   email: string;
   displayName: string;
   role: UserRole;
+  isActive: boolean;
+  phone: string | null;
+  bio: string | null;
+  defaultMarketZone: string | null;
+  energyTypesOfInterest: EnergyType[];
+  notificationEmail: boolean;
+  notificationInApp: boolean;
+  lastLoginAt: string | null;
   createdAt: string;
 }
 

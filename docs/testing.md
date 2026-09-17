@@ -16,9 +16,24 @@
 - API `/health` 200 envelope
 - Contract compile of AccessControl/Pausable skeleton (Hardhat EVM `hardhat test` can SIGBUS in this environment; S0 verifies compile)
 
+## S1 coverage
+
+- JWT: access/refresh round-trip, token-type isolation, tamper rejection, expiry derivation
+- Passwords: bcrypt hash/verify, plaintext never stored
+- Crypto helpers: stable hashing, constant-time comparison, random nonce length
+- Wallet challenge message: deterministic, binds address/chain/nonce/timestamp
+- Auth integration: register, duplicate email 409, weak password 422, credential-enumeration safety,
+  refresh rotation and reuse rejection, logout invalidation, RBAC 401/403, profile/settings updates,
+  unknown-field 422, password change with session revocation
+- Wallet integration: real secp256k1 signatures, wrong signer rejection, nonce replay rejection,
+  cross-account hijack rejection, invalid address 422, unlink
+- Web: open-redirect sanitization and protected-path detection
+
+Integration tests skip automatically when PostgreSQL is unreachable, rather than inventing a live database.
+
 ## Planned (later sprints)
 
-Auth/RBAC, listing quantity constraints, bid lifecycle, matching races, expiration, overselling, invalid payment, wallet mismatch, wrong network, user rejection, RPC failure, revert, duplicate settlement, Socket.IO privilege isolation.
+Listing quantity constraints, bid lifecycle, matching races, expiration, overselling, invalid payment, wrong network, user rejection, RPC failure, revert, duplicate settlement, Socket.IO privilege isolation.
 
 ## Commands
 

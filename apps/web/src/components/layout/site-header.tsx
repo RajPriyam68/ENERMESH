@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { AuthNav } from "@/components/layout/auth-nav";
 
 const nav = [
   { href: "/", label: "Home" },
@@ -21,14 +21,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" asChild>
-            <Link href="/login">Log in</Link>
-          </Button>
-          <Button size="sm" asChild>
-            <Link href="/register">Register</Link>
-          </Button>
-        </div>
+        <AuthNav />
       </div>
     </header>
   );
