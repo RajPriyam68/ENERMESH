@@ -26,6 +26,9 @@
   "devDependencies": {
     "typescript": "^5.8.2"
   },
+  "overrides": {
+    "string.prototype.trim": "1.2.10"
+  },
   "engines": {
     "node": ">=22.0.0",
     "npm": ">=10.0.0"

@@ -19,6 +19,7 @@
     "chai": "^4.5.0",
     "ethers": "^6.13.5",
     "hardhat": "^2.22.19",
-    "solhint": "^5.0.5"
+    "solhint": "^5.0.5",
+    "string.prototype.trim": "1.2.10"
   }
 }
