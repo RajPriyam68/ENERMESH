@@ -58,7 +58,7 @@ export function quantitiesFromAvailable(availableKwh: number): QuantityTriple {
 
 /**
  * Recomputes original/available after a seller edits remaining kWh.
- * Sold quantity is never changed from this path (fills belong to S3+).
+ * Sold quantity is never changed from this path.
  */
 export function resizeRemaining(current: QuantityTriple, nextAvailableKwh: number): QuantityTriple {
   const sold = roundKwh(current.soldQuantityKwh);
@@ -67,5 +67,51 @@ export function resizeRemaining(current: QuantityTriple, nextAvailableKwh: numbe
     originalQuantityKwh: roundKwh(available + sold),
     availableQuantityKwh: available,
     soldQuantityKwh: sold,
+  };
+}
+
+export function applyFill(current: QuantityTriple, fillKwh: number): QuantityTriple {
+  const fill = roundKwh(fillKwh);
+  return {
+    originalQuantityKwh: roundKwh(current.originalQuantityKwh),
+    availableQuantityKwh: roundKwh(current.availableQuantityKwh - fill),
+    soldQuantityKwh: roundKwh(current.soldQuantityKwh + fill),
+  };
+}
+
+export interface BidQuantityTriple {
+  requestedKwh: number;
+  unmatchedKwh: number;
+  matchedKwh: number;
+}
+
+export function checkBidQuantity(q: BidQuantityTriple): QuantityCheck {
+  const requested = roundKwh(q.requestedKwh);
+  const unmatched = roundKwh(q.unmatchedKwh);
+  const matched = roundKwh(q.matchedKwh);
+  if (!Number.isFinite(requested) || !Number.isFinite(unmatched) || !Number.isFinite(matched)) {
+    return { ok: false, reason: "Bid quantity values must be finite numbers" };
+  }
+  if (requested <= 0) {
+    return { ok: false, reason: "requestedKwh must be > 0" };
+  }
+  if (unmatched < 0) {
+    return { ok: false, reason: "unmatchedKwh must be >= 0" };
+  }
+  if (matched < 0) {
+    return { ok: false, reason: "matchedKwh must be >= 0" };
+  }
+  if (roundKwh(unmatched + matched) !== requested) {
+    return { ok: false, reason: "unmatchedKwh + matchedKwh must equal requestedKwh" };
+  }
+  return { ok: true };
+}
+
+export function applyBidFill(current: BidQuantityTriple, fillKwh: number): BidQuantityTriple {
+  const fill = roundKwh(fillKwh);
+  return {
+    requestedKwh: roundKwh(current.requestedKwh),
+    unmatchedKwh: roundKwh(current.unmatchedKwh - fill),
+    matchedKwh: roundKwh(current.matchedKwh + fill),
   };
 }

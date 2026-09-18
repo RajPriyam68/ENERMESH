@@ -16,7 +16,7 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | Profile + settings + password change | S1 | `apps/api/src/services/user.service.ts`, `apps/web/src/components/auth` | Session invalidation on change |
 | Wallet nonce + signature verify | S1 | `apps/api/src/services/wallet.service.ts`, `apps/web/src/components/wallet/wallet-panel.tsx` | Replay accepted = 0 |
 | Listings + no oversell | S2 | `apps/api/src/services/listing.service.ts`, `packages/shared/src/quantity.ts`, `apps/web/src/app/marketplace` | Oversell attempts blocked; empty catalog stays empty |
-| Bids + persistent matching | S3 | planned | Match success, time, unmatched kWh |
+| Bids + persistent matching | S3 | `apps/api/src/services/matching.service.ts`, `packages/shared/src/matching.ts`, `apps/web/src/app/bids` | Partial fill 100 vs 30; concurrent oversell blocked |
 | MetaMask + Solidity trade | S4 | planned | Rejection vs revert vs fail |
 | Receipt verification | S5 | planned | Settlement time, false confirm = 0 |
 | Socket.IO notifications | S6 | planned | Event latency |

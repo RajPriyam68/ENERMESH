@@ -3,12 +3,12 @@
 import type { ListingPublic } from "@enermesh/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { PlaceBidForm } from "@/components/bids/place-bid-form";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError, apiRequest } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { loginHref } from "@/lib/routes";
 import { formatKwh, formatPrice, formatWindow } from "@/lib/utils";
 
 export function ListingDetail({ listingId }: { listingId: string }) {
@@ -94,23 +94,26 @@ export function ListingDetail({ listingId }: { listingId: string }) {
       </dl>
 
       <Alert tone="info">
-        Bidding and matching arrive in Sprint 3. Quantity shown here is live remaining energy, not a forecast.
+        Quantity shown here is live remaining energy, not a forecast. A bid may match only part of this offer.
       </Alert>
 
-      <div className="flex flex-wrap gap-2">
-        <Button variant="outline" asChild>
-          <Link href="/marketplace">All offers</Link>
+      {owned ? (
+        <Button asChild>
+          <Link href={`/offers/${listing.id}/edit`}>Edit offer</Link>
         </Button>
-        {owned ? (
-          <Button asChild>
-            <Link href={`/offers/${listing.id}/edit`}>Edit offer</Link>
-          </Button>
-        ) : user ? null : (
-          <Button variant="outline" asChild>
-            <Link href={loginHref(`/marketplace/${listing.id}`)}>Sign in</Link>
-          </Button>
-        )}
-      </div>
+      ) : (
+        <section className="rounded-lg border border-border bg-card p-5">
+          <h2 className="text-lg font-semibold">Place a bid</h2>
+          <p className="mt-1 mb-4 text-sm text-muted">
+            Matching uses the seller ask price if it is at or below your max. Settlement is not in this sprint.
+          </p>
+          <PlaceBidForm listing={listing} />
+        </section>
+      )}
+
+      <Button variant="outline" asChild>
+        <Link href="/marketplace">All offers</Link>
+      </Button>
     </article>
   );
 }

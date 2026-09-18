@@ -39,9 +39,16 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Owner update does not invent sold volume; cross-seller edit 403; cancel hides from public browse; unknown id 404
 - Web: catalog query encoding, datetime-local round-trip, protected `/offers` paths
 
+## S3 coverage
+
+- Matcher: 100 vs 30 partial fill, cheapest-listing-first, min-trade rejection, self-trade, type/zone/window/price incompatibility
+- Fill helpers: listing available→sold, bid unmatched→matched, integrity after fill
+- Bid API: unauthenticated 401, seller 403, targeted partial fill, concurrent last-40 kWh race without oversell, open-market cheaper-first, incompatible type unmatched, past window 422, foreign bid 403, cancel remaining demand
+- Web: protected `/bids` and `/matches` paths
+
 ## Planned (later sprints)
 
-Bid lifecycle, matching races, expiration vs matching, overselling at match time, invalid payment, wrong network, user rejection, RPC failure, revert, duplicate settlement, Socket.IO privilege isolation.
+Invalid payment, wrong network, user rejection, RPC failure, revert, duplicate settlement, Socket.IO privilege isolation.
 
 ## Commands
 

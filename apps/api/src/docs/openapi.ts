@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 2 adds seller listings with quantity integrity and public browse/filter/sort/paginate. Matching and settlement arrive in later sprints.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 3 adds buyer bids, deterministic partial matching inside serializable transactions, and match visibility. Settlement arrives in later sprints.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -280,6 +280,97 @@ export const openApiDocument = {
           "403": envelope("Not the owner"),
           "404": envelope("Not found"),
           "409": envelope("Not cancellable"),
+        },
+      },
+    },
+    "/bids": {
+      get: {
+        summary: "List the current buyer's bids",
+        tags: ["Bids"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "energyType", in: "query", schema: { type: "string" } },
+          { name: "marketZone", in: "query", schema: { type: "string" } },
+          { name: "listingId", in: "query", schema: { type: "string", format: "uuid" } },
+          { name: "status", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": envelope("Paginated bids"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Buyer or admin role required"),
+        },
+      },
+      post: {
+        summary: "Place a bid and run deterministic partial matching",
+        tags: ["Bids"],
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonBody("requestedKwh, maxPricePerKwh, energyType, marketZone, window; optional listingId"),
+        responses: {
+          "201": envelope("Bid created with any matches"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Buyer or admin role required"),
+          "404": envelope("Target listing not found"),
+          "409": envelope("Self-trade or quantity conflict"),
+          "422": envelope("Validation failed"),
+        },
+      },
+    },
+    "/bids/{id}": {
+      get: {
+        summary: "Bid detail",
+        tags: ["Bids"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": envelope("Bid"),
+          "403": envelope("Not the owner"),
+          "404": envelope("Not found"),
+        },
+      },
+    },
+    "/bids/{id}/cancel": {
+      post: {
+        summary: "Cancel an open or partially matched bid",
+        tags: ["Bids"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": envelope("Cancelled bid"),
+          "403": envelope("Not the owner"),
+          "404": envelope("Not found"),
+          "409": envelope("Not cancellable"),
+        },
+      },
+    },
+    "/matches": {
+      get: {
+        summary: "List matches for the current buyer or seller",
+        tags: ["Matches"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "listingId", in: "query", schema: { type: "string", format: "uuid" } },
+          { name: "bidId", in: "query", schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          "200": envelope("Paginated matches"),
+          "401": envelope("Authentication required"),
+        },
+      },
+    },
+    "/matches/{id}": {
+      get: {
+        summary: "Match detail",
+        tags: ["Matches"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": envelope("Match"),
+          "403": envelope("Not a participant"),
+          "404": envelope("Not found"),
         },
       },
     },

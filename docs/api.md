@@ -93,9 +93,29 @@ List responses include `listings`, `page`, `pageSize`, `total`, `totalPages` in 
 
 Create without a verified wallet returns 409 `WALLET_REQUIRED`. Unknown fields such as `soldQuantityKwh` return 422. Quantity integrity failures return 409 `QUANTITY_INTEGRITY`.
 
+### Bids (S3)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/bids` | BUYER/ADMIN | List own bids; filter, sort, paginate |
+| GET | `/api/v1/bids/:id` | owner or ADMIN | Bid detail; expires the row on read if the window has passed |
+| POST | `/api/v1/bids` | BUYER/ADMIN | Place a bid and run deterministic partial matching |
+| POST | `/api/v1/bids/:id/cancel` | owner or ADMIN | Cancel remaining unmatched demand |
+
+Create matches immediately inside a serializable transaction. Optional `listingId` targets one listing; omitting it matches the cheapest compatible public listings. Self-trade on own listing returns 409 `SELF_TRADE` (sellers are also blocked by RBAC 403). Past `requiredUntil` returns 422 `WINDOW_IN_PAST`. Quantity integrity failures return 409 `QUANTITY_INTEGRITY`.
+
+### Matches (S3)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/matches` | access token | List matches where the caller is buyer or seller |
+| GET | `/api/v1/matches/:id` | participant or ADMIN | Match detail |
+
+Match status is `PROPOSED`. On-chain settlement is Sprint 4+.
+
 ## Planned surface (later sprints)
 
-`/bids`, `/matches`, `/transactions`, `/dashboard`, `/analytics`, `/notifications`, `/reports`,
+`/transactions`, `/dashboard`, `/analytics`, `/notifications`, `/reports`,
 `/ai`, `/iot`.
 
 All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.

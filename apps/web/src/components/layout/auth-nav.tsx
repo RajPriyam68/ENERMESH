@@ -27,6 +27,14 @@ export function AuthNav() {
             <Link href="/offers">Offers</Link>
           </Button>
         ) : null}
+        {user.role === "BUYER" || user.role === "ADMIN" ? (
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/bids">Bids</Link>
+          </Button>
+        ) : null}
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/matches">Matches</Link>
+        </Button>
         <Button variant="ghost" size="sm" asChild>
           <Link href="/profile">Profile</Link>
         </Button>

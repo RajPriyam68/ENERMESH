@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
+  applyBidFill,
+  applyFill,
+  checkBidQuantity,
   checkQuantityIntegrity,
   quantitiesFromAvailable,
   resizeRemaining,
@@ -67,5 +70,25 @@ describe("quantity integrity", () => {
 
   it("rounds to three decimal places", () => {
     assert.equal(roundKwh(1.2346), 1.235);
+  });
+});
+
+describe("fill application", () => {
+  it("moves kWh from available to sold", () => {
+    const next = applyFill(
+      { originalQuantityKwh: 100, availableQuantityKwh: 100, soldQuantityKwh: 0 },
+      30,
+    );
+    assert.equal(next.availableQuantityKwh, 70);
+    assert.equal(next.soldQuantityKwh, 30);
+    assert.equal(next.originalQuantityKwh, 100);
+    assert.equal(checkQuantityIntegrity(next).ok, true);
+  });
+
+  it("keeps bid requested = unmatched + matched", () => {
+    const next = applyBidFill({ requestedKwh: 50, unmatchedKwh: 50, matchedKwh: 0 }, 20);
+    assert.equal(next.unmatchedKwh, 30);
+    assert.equal(next.matchedKwh, 20);
+    assert.equal(checkBidQuantity(next).ok, true);
   });
 });

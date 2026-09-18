@@ -1,4 +1,5 @@
 import { EnergyType } from "./enums.js";
+import { roundKwh } from "./quantity.js";
 
 export interface MatchCandidateListing {
   id: string;
@@ -71,7 +72,7 @@ export function computePartialMatch(
     }
   }
 
-  const matchedKwh = Math.min(listing.availableQuantityKwh, bid.unmatchedKwh, listing.maxTradeKwh);
+  const matchedKwh = roundKwh(Math.min(listing.availableQuantityKwh, bid.unmatchedKwh, listing.maxTradeKwh));
   if (matchedKwh <= 0) return null;
   if (matchedKwh < listing.minTradeKwh && listing.availableQuantityKwh >= listing.minTradeKwh) {
     return null;
@@ -82,9 +83,28 @@ export function computePartialMatch(
     bidId: bid.id,
     matchedKwh,
     pricePerKwh: listing.pricePerKwh,
-    remainingListingKwh: Number((listing.availableQuantityKwh - matchedKwh).toFixed(3)),
-    remainingBidKwh: Number((bid.unmatchedKwh - matchedKwh).toFixed(3)),
+    remainingListingKwh: roundKwh(listing.availableQuantityKwh - matchedKwh),
+    remainingBidKwh: roundKwh(bid.unmatchedKwh - matchedKwh),
   };
+}
+
+export function matchBidAgainstListings(
+  bid: MatchCandidateBid,
+  listings: MatchCandidateListing[],
+): MatchResult[] {
+  const sorted = sortListingsForMatching(listings);
+  const results: MatchResult[] = [];
+  let unmatched = bid.unmatchedKwh;
+  const working = sorted.map((listing) => ({ ...listing }));
+  for (const listing of working) {
+    if (unmatched <= 0) break;
+    const result = computePartialMatch(listing, { ...bid, unmatchedKwh: unmatched });
+    if (!result) continue;
+    results.push(result);
+    unmatched = result.remainingBidKwh;
+    listing.availableQuantityKwh = result.remainingListingKwh;
+  }
+  return results;
 }
 
 export function sortListingsForMatching(listings: MatchCandidateListing[]): MatchCandidateListing[] {

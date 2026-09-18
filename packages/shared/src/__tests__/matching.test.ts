@@ -4,6 +4,7 @@ import { EnergyType } from "../enums.js";
 import {
   computePartialMatch,
   isCompatible,
+  matchBidAgainstListings,
   type MatchCandidateBid,
   type MatchCandidateListing,
 } from "../matching.js";
@@ -67,5 +68,34 @@ describe("deterministic matching", () => {
   it("never matches seller to self", () => {
     const bid = { ...baseBid(), buyerId: "seller-1" };
     assert.equal(computePartialMatch(baseListing(), bid), null);
+  });
+
+  it("fills the cheapest compatible listing first", () => {
+    const cheap = {
+      ...baseListing(),
+      id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      pricePerKwh: 3,
+      availableQuantityKwh: 20,
+      createdAt: new Date("2026-09-13T10:00:00Z"),
+    };
+    const expensive = {
+      ...baseListing(),
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      pricePerKwh: 4,
+      availableQuantityKwh: 80,
+      createdAt: new Date("2026-09-13T07:00:00Z"),
+    };
+    const results = matchBidAgainstListings({ ...baseBid(), unmatchedKwh: 50 }, [expensive, cheap]);
+    assert.equal(results.length, 2);
+    assert.equal(results[0]!.listingId, cheap.id);
+    assert.equal(results[0]!.matchedKwh, 20);
+    assert.equal(results[1]!.listingId, expensive.id);
+    assert.equal(results[1]!.matchedKwh, 30);
+  });
+
+  it("rejects a bid smaller than min trade when the listing still has a full lot", () => {
+    const listing = { ...baseListing(), minTradeKwh: 10, availableQuantityKwh: 100 };
+    const bid = { ...baseBid(), unmatchedKwh: 5 };
+    assert.equal(computePartialMatch(listing, bid), null);
   });
 });

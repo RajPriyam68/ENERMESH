@@ -15,3 +15,8 @@ export function defaultOfferWindow(): { availableFrom: string; availableUntil: s
   const until = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
   return { availableFrom: toDatetimeLocal(from), availableUntil: toDatetimeLocal(until) };
 }
+
+export function defaultBidWindow(): { requiredFrom: string; requiredUntil: string } {
+  const window = defaultOfferWindow();
+  return { requiredFrom: window.availableFrom, requiredUntil: window.availableUntil };
+}

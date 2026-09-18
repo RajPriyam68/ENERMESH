@@ -36,6 +36,8 @@ describe("isProtectedPath", () => {
     assert.equal(isProtectedPath("/settings"), true);
     assert.equal(isProtectedPath("/offers"), true);
     assert.equal(isProtectedPath("/offers/new"), true);
+    assert.equal(isProtectedPath("/bids"), true);
+    assert.equal(isProtectedPath("/matches"), true);
     assert.equal(isProtectedPath("/marketplace"), false);
   });
 });

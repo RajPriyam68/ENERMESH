@@ -96,9 +96,14 @@ export interface MatchPublic {
   id: string;
   listingId: string;
   bidId: string;
+  sellerId: string;
+  buyerId: string;
   matchedKwh: number;
   pricePerKwh: number;
   status: MatchStatus;
+  energyType: EnergyType;
+  marketZone: string;
+  listingLocation: string;
   createdAt: string;
 }
 
