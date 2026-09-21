@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 3 adds buyer bids, deterministic partial matching inside serializable transactions, and match visibility. Settlement arrives in later sprints.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 4 adds MetaMask trade reporting with server-side receipt and event verification. The API never marks a trade CONFIRMED from wallet UI alone.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -369,6 +369,52 @@ export const openApiDocument = {
         parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
         responses: {
           "200": envelope("Match"),
+          "403": envelope("Not a participant"),
+          "404": envelope("Not found"),
+        },
+      },
+    },
+    "/trades": {
+      get: {
+        summary: "List trades for the current buyer or seller",
+        tags: ["Trades"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "matchId", in: "query", schema: { type: "string", format: "uuid" } },
+          { name: "status", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": envelope("Paginated trades"),
+          "401": envelope("Authentication required"),
+        },
+      },
+    },
+    "/trades/report": {
+      post: {
+        summary: "Report a purchase, settle, or wallet rejection for backend verification",
+        tags: ["Trades"],
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonBody("matchId, action (purchase|settle|reject), idempotencyKey; txHash required except reject"),
+        responses: {
+          "200": envelope("Trade after RPC receipt and event verification; PENDING if unmined"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Not a participant"),
+          "404": envelope("Match not found"),
+          "409": envelope("Wrong wallet, network, event, duplicate, stale, or reverted"),
+          "422": envelope("Validation failed"),
+        },
+      },
+    },
+    "/trades/{id}": {
+      get: {
+        summary: "Trade detail",
+        tags: ["Trades"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": envelope("Trade"),
           "403": envelope("Not a participant"),
           "404": envelope("Not found"),
         },

@@ -14,6 +14,7 @@ import { usersRouter } from "./routes/users.js";
 import { bidsRouter } from "./routes/bids.js";
 import { listingsRouter } from "./routes/listings.js";
 import { matchesRouter } from "./routes/matches.js";
+import { tradesRouter } from "./routes/trades.js";
 import { walletsRouter } from "./routes/wallets.js";
 
 export function createApp() {
@@ -63,6 +64,7 @@ export function createApp() {
   app.use(`${API_PREFIX}/listings`, listingsRouter);
   app.use(`${API_PREFIX}/bids`, bidsRouter);
   app.use(`${API_PREFIX}/matches`, matchesRouter);
+  app.use(`${API_PREFIX}/trades`, tradesRouter);
   app.use(`${API_PREFIX}/admin`, adminRouter);
   app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(openApiDocument));
 

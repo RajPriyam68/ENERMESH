@@ -46,9 +46,17 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Bid API: unauthenticated 401, seller 403, targeted partial fill, concurrent last-40 kWh race without oversell, open-market cheaper-first, incompatible type unmatched, past window 422, foreign bid 403, cancel remaining demand
 - Web: protected `/bids` and `/matches` paths
 
+## S4 coverage
+
+- Contract: listing/purchase/settle, pause, self-trade, oversell, incorrect payment, duplicate settle
+- Web encoding and confirmation policy: mined wallet receipt is never `CONFIRMED`
+- Event parsing: `EnergyPurchased` / `TradeSettled` only from the configured contract
+- Trade report API: unauthenticated 401, wallet reject, pending without receipt, confirm after receipt, idempotent confirm, duplicate txHash, wrong wallet, seller 403, wrong network, missing event, reverted receipt, cancelled listing, settle after purchase
+- JSON-RPC is mocked in API tests; no live chain is required
+
 ## Planned (later sprints)
 
-Invalid payment, wrong network, user rejection, RPC failure, revert, duplicate settlement, Socket.IO privilege isolation.
+Socket.IO privilege isolation, listing on-chain id persistence on the Listing row.
 
 ## Commands
 

@@ -3,6 +3,7 @@
 import type { MatchPublic } from "@enermesh/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { ReviewTrade } from "@/components/trades/review-trade";
 import { Alert } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError, apiRequest } from "@/lib/api";
@@ -15,6 +16,7 @@ interface MatchListResponse {
 
 export function MatchList() {
   const token = useAuthStore((state) => state.accessToken);
+  const user = useAuthStore((state) => state.user);
   const query = useQuery({
     queryKey: ["matches", "mine"],
     enabled: Boolean(token),
@@ -53,10 +55,12 @@ export function MatchList() {
           <p className="text-sm">
             {formatKwh(match.matchedKwh)} at {formatPrice(match.pricePerKwh)}
           </p>
-          <p className="text-xs text-muted">{match.marketZone} · on-chain settlement is not in this sprint</p>
+          <p className="text-xs text-muted">{match.marketZone} · settlement stays unconfirmed until the API verifies a receipt</p>
           <Link href={`/marketplace/${match.listingId}`} className="mt-2 inline-block text-sm text-primary hover:underline">
             View listing
           </Link>
+          {user?.id === match.buyerId ? <ReviewTrade match={match} action="purchase" /> : null}
+          {user?.id === match.buyerId || user?.id === match.sellerId ? <ReviewTrade match={match} action="settle" /> : null}
         </li>
       ))}
     </ul>

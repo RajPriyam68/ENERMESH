@@ -4,6 +4,7 @@ import type { ListingPublic } from "@enermesh/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState } from "react";
+import { PublishListingOnChain } from "@/components/trades/publish-listing-on-chain";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -97,22 +98,23 @@ export function SellerOffers() {
                     <Button size="sm" variant="outline" asChild>
                       <Link href={`/offers/${listing.id}/edit`}>Edit</Link>
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={cancelMutation.isPending}
-                      onClick={() => {
-                        if (window.confirm("Cancel this offer? Remaining energy will no longer be listed.")) {
-                          cancelMutation.mutate(listing.id);
-                        }
-                      }}
-                    >
-                      Cancel offer
-                    </Button>
-                  </>
-                ) : null}
-              </div>
-            </li>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={cancelMutation.isPending}
+                        onClick={() => {
+                          if (window.confirm("Cancel this offer? Remaining energy will no longer be listed.")) {
+                            cancelMutation.mutate(listing.id);
+                          }
+                        }}
+                      >
+                        Cancel offer
+                      </Button>
+                    </>
+                  ) : null}
+                </div>
+                <PublishListingOnChain listing={listing} />
+              </li>
           ))}
         </ul>
       )}

@@ -17,8 +17,8 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | Wallet nonce + signature verify | S1 | `apps/api/src/services/wallet.service.ts`, `apps/web/src/components/wallet/wallet-panel.tsx` | Replay accepted = 0 |
 | Listings + no oversell | S2 | `apps/api/src/services/listing.service.ts`, `packages/shared/src/quantity.ts`, `apps/web/src/app/marketplace` | Oversell attempts blocked; empty catalog stays empty |
 | Bids + persistent matching | S3 | `apps/api/src/services/matching.service.ts`, `packages/shared/src/matching.ts`, `apps/web/src/app/bids` | Partial fill 100 vs 30; concurrent oversell blocked |
-| MetaMask + Solidity trade | S4 | planned | Rejection vs revert vs fail |
-| Receipt verification | S5 | planned | Settlement time, false confirm = 0 |
+| MetaMask + Solidity trade | S4 | `packages/contracts/contracts/EnerMeshMarketplace.sol`, `apps/web/src/components/trades` | Rejection vs revert vs fail |
+| Receipt verification | S4 | `apps/api/src/services/settlement.service.ts`, `POST /trades/report` | False confirm = 0; pending/failed/rejected distinct |
 | Socket.IO notifications | S6 | planned | Event latency |
 | Price + analytics | S7 | planned | Confidence, dataQuality labelled |
 | AI adapters | S8 | planned | Advisory-only; app works without key |

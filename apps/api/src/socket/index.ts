@@ -49,7 +49,7 @@ export function createSocketServer(httpServer: HttpServer) {
     const user = socket.data.user as { id: string; role: string };
     socket.emit("system:hello", {
       service: "enermesh",
-      sprint: "S3",
+      sprint: "S4",
       userId: user.id,
       message: "Realtime channel ready. Privileged events are server-emitted only.",
     });

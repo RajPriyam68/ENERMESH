@@ -4,6 +4,7 @@ import type { ListingPublic } from "@enermesh/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { PlaceBidForm } from "@/components/bids/place-bid-form";
+import { PublishListingOnChain } from "@/components/trades/publish-listing-on-chain";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -98,14 +99,17 @@ export function ListingDetail({ listingId }: { listingId: string }) {
       </Alert>
 
       {owned ? (
-        <Button asChild>
-          <Link href={`/offers/${listing.id}/edit`}>Edit offer</Link>
-        </Button>
+        <div className="space-y-4">
+          <Button asChild>
+            <Link href={`/offers/${listing.id}/edit`}>Edit offer</Link>
+          </Button>
+          <PublishListingOnChain listing={listing} />
+        </div>
       ) : (
         <section className="rounded-lg border border-border bg-card p-5">
           <h2 className="text-lg font-semibold">Place a bid</h2>
           <p className="mt-1 mb-4 text-sm text-muted">
-            Matching uses the seller ask price if it is at or below your max. Settlement is not in this sprint.
+            Matching uses the seller ask price if it is at or below your max. On-chain purchase happens from Matches after a fill.
           </p>
           <PlaceBidForm listing={listing} />
         </section>

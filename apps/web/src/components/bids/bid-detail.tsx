@@ -3,6 +3,7 @@
 import type { BidPublic, MatchPublic } from "@enermesh/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { ReviewTrade } from "@/components/trades/review-trade";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
@@ -85,10 +86,12 @@ export function BidDetail({ bidId }: { bidId: string }) {
             <p className="text-sm">
               {formatKwh(match.matchedKwh)} at {formatPrice(match.pricePerKwh)}
             </p>
-            <p className="text-xs text-muted">{match.status.replaceAll("_", " ")} · settlement is Sprint 4+</p>
+            <p className="text-xs text-muted">{match.status.replaceAll("_", " ")} · wallet receipt is not API confirmation</p>
             <Link href={`/marketplace/${match.listingId}`} className="mt-2 inline-block text-sm text-primary hover:underline">
               View listing
             </Link>
+            <ReviewTrade match={match} action="purchase" />
+            <ReviewTrade match={match} action="settle" />
           </div>
         ))}
       </section>

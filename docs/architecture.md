@@ -16,9 +16,9 @@ EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**
 1. Browser talks only to the web origin (or same-origin `/api` proxy).
 2. API validates input with Zod, enforces RBAC (S1+), writes operational data to PostgreSQL.
 3. Matching runs in the API inside database transactions (S3).
-4. Buyer/seller review a match, then MetaMask proposes a contract call (S4).
-5. API never marks a trade `CONFIRMED` until it verifies receipt, event, and contract state (S5).
-6. Socket.IO emits server-authored events only (S6). Clients cannot emit privileged state.
+  4. Buyer/seller review a match, then MetaMask proposes a contract call (S4).
+  5. API never marks a trade `CONFIRMED` until it verifies receipt, event, and contract state (`POST /trades/report`).
+  6. Socket.IO emits server-authored events only (S6). Clients cannot emit privileged state.
 
 ## Trust boundaries
 
@@ -34,7 +34,7 @@ EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**
 
 PostgreSQL stores dynamic marketplace data and blockchain metadata (`txHash`, `blockNumber`, confirmation status).
 
-On-chain fields (S4+): trade/listing ID, seller/buyer wallets, quantity, price, timestamp.
+On-chain fields: trade/listing ID, seller/buyer wallets, quantity, price, timestamp. The API copies verified `txHash`, `blockNumber`, contract, and network onto `Trade`.
 
 ## Environments
 

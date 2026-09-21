@@ -111,7 +111,19 @@ Create matches immediately inside a serializable transaction. Optional `listingI
 | GET | `/api/v1/matches` | access token | List matches where the caller is buyer or seller |
 | GET | `/api/v1/matches/:id` | participant or ADMIN | Match detail |
 
-Match status is `PROPOSED`. On-chain settlement is Sprint 4+.
+Match status starts as `PROPOSED`. Verified purchase moves it to `SETTLEMENT_PENDING`; verified `settleTrade` moves it to `SETTLED`.
+
+### Trades (S4)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/trades` | access token | List trades where the caller is buyer or seller |
+| GET | `/api/v1/trades/:id` | participant or ADMIN | Trade detail |
+| POST | `/api/v1/trades/report` | participant | Report purchase, settle, or wallet rejection |
+
+`POST /trades/report` body: `matchId`, `action` (`purchase` \| `settle` \| `reject`), `idempotencyKey`; `txHash` required except for `reject`.
+
+The API queries `RPC_URL`, requires `CHAIN_ID` and `CONTRACT_ADDRESS`, and sets `CONFIRMED` only after a successful receipt plus the expected marketplace event, quantity, payment, and verified wallets. A missing receipt is `PENDING`. Reverts and invalid events are `FAILED` (`409`). Duplicate `txHash` / idempotency key returns `409 DUPLICATE_TX`. Wrong wallet/network/stale listing return `409`. The wallet UI cannot mark a trade `CONFIRMED`.
 
 ## Planned surface (later sprints)
 

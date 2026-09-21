@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { ApiError, apiRequest } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth-store";
-import { chainIdToHex, describeWalletError, getInjectedProvider } from "@/lib/ethereum";
+import { describeWalletError, ensureChain, getInjectedProvider } from "@/lib/ethereum";
 
 const EXPECTED_CHAIN_ID = Number(process.env.NEXT_PUBLIC_CHAIN_ID ?? 80002);
 const EXPECTED_CHAIN_NAME = process.env.NEXT_PUBLIC_CHAIN_NAME ?? "Polygon Amoy";
@@ -139,10 +139,7 @@ export function WalletPanel() {
     const provider = getInjectedProvider();
     if (!provider) return;
     try {
-      await provider.request({
-        method: "wallet_switchEthereumChain",
-        params: [{ chainId: chainIdToHex(EXPECTED_CHAIN_ID) }],
-      });
+      await ensureChain(provider);
       await refreshAccount();
     } catch (error) {
       setPanelError({ message: describeWalletError(error), retryable: true });

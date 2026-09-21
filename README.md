@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S3 — Bids + Deterministic Matching** is complete. Next is **S4 — Solidity + MetaMask**. See `docs/PROJECT_STATE.md`.
+**S4 — Solidity + MetaMask + receipt verification** is complete. Next is **S5 hybrid polish / S6 realtime**. See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 
