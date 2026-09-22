@@ -68,10 +68,35 @@ function bidStatusAfterFill(unmatched: number, matched: number): BidStatus {
   return "OPEN";
 }
 
-function isSerializationFailure(error: unknown): boolean {
-  if (typeof error !== "object" || error === null) return false;
-  const code = (error as { code?: string }).code;
-  return code === "P2034" || code === "40001";
+function collectErrorCodes(error: unknown, seen = new Set<unknown>()): string[] {
+  if (typeof error !== "object" || error === null || seen.has(error)) return [];
+  seen.add(error);
+  const rec = error as { code?: unknown; meta?: { code?: unknown }; cause?: unknown };
+  const codes: string[] = [];
+  if (typeof rec.code === "string" || typeof rec.code === "number") codes.push(String(rec.code));
+  if (typeof rec.meta?.code === "string" || typeof rec.meta?.code === "number") {
+    codes.push(String(rec.meta.code));
+  }
+  codes.push(...collectErrorCodes(rec.cause, seen));
+  return codes;
+}
+
+function isRetryableConcurrencyError(error: unknown): boolean {
+  const codes = new Set(collectErrorCodes(error).map((code) => String(code).toUpperCase()));
+  if (codes.has("P2034") || codes.has("40001") || codes.has("40P01")) return true;
+  const rec = error as { message?: string; meta?: { message?: string } };
+  const text = `${rec.message ?? ""} ${rec.meta?.message ?? ""}`.toLowerCase();
+  return (
+    text.includes("could not serialize") ||
+    text.includes("serialization failure") ||
+    text.includes("deadlock detected") ||
+    text.includes("write conflict") ||
+    text.includes("concurrent update")
+  );
+}
+
+function backoffMs(attempt: number): number {
+  return 15 * 2 ** attempt;
 }
 
 async function withSerializableRetry<T>(
@@ -88,8 +113,8 @@ async function withSerializableRetry<T>(
       });
     } catch (error) {
       lastError = error;
-      if (isSerializationFailure(error) && attempt < attempts - 1) continue;
-      throw error;
+      if (!isRetryableConcurrencyError(error) || attempt >= attempts - 1) throw error;
+      await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
     }
   }
   throw lastError;
