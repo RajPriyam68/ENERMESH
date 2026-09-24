@@ -18,7 +18,7 @@ EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**
 3. Matching runs in the API inside database transactions (S3).
   4. Buyer/seller review a match, then MetaMask proposes a contract call (S4).
   5. API never marks a trade `CONFIRMED` until it verifies receipt, event, and contract state (`POST /trades/report`).
-  6. Socket.IO emits server-authored events only (S6). Clients cannot emit privileged state.
+  6. Socket.IO emits server-authored events only after validated writes (S5). Clients cannot emit privileged state. REST remains the source of truth.
 
 ## Trust boundaries
 

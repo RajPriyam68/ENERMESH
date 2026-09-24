@@ -54,9 +54,17 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Trade report API: unauthenticated 401, wallet reject, pending without receipt, confirm after receipt, idempotent confirm, duplicate txHash, wrong wallet, seller 403, wrong network, missing event, reverted receipt, cancelled listing, settle after purchase
 - JSON-RPC is mocked in API tests; no live chain is required
 
+## S5 coverage
+
+- Socket handshake: missing token and invalid token rejected with `UNAUTHENTICATED`
+- Valid access token receives `system:hello` with sprint `S5`
+- `listing:created` emitted only after a validated POST; client-originated privileged emits are ignored
+- Notification REST: unauthenticated 401, missing id 404, listing author receives `LISTING_CREATED`
+- Web: socket event → query-key mapping; duplicate `eventId` dropped
+
 ## Planned (later sprints)
 
-Socket.IO privilege isolation, listing on-chain id persistence on the Listing row.
+Listing on-chain id persistence on the Listing row.
 
 ## Commands
 

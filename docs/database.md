@@ -12,7 +12,7 @@ Provider: PostgreSQL 16 via Prisma. Connection string: `DATABASE_URL` (any compa
 - **Bid** — requested/unmatched/matched kWh, max price, type, zone, window, status
 - **Match** — listing+bid, matched kWh, price, status
 - **Trade** — quantities, amounts, blockchain fields, unique `txHash`, unique `idempotencyKey`
-- **Notification** — type, title, body, read timestamp, metadata JSON
+- **Notification** — type, title, body, read timestamp, metadata JSON. S5 writes rows after validated listing, bid, match, trade, and wallet events and exposes them at `/notifications`.
 - **EnergyHistory** — kWh samples with `ACTUAL | ESTIMATED | SIMULATED`
 - **AuditLog** — action, entity, optional user, IP, metadata
 

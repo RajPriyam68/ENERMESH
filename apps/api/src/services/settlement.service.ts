@@ -24,7 +24,9 @@ import {
 } from "../lib/marketplace-events.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
-import { decimalNumber } from "./matching.service.js";
+import { emitMatchUpdated, emitTradeEvent } from "../socket/index.js";
+import { decimalNumber, toPublicMatch } from "./matching.service.js";
+import { createNotification } from "./notification.service.js";
 
 const TERMINAL_MATCH = new Set(["REJECTED", "EXPIRED", "SETTLED", "FAILED"]);
 const TERMINAL_TRADE = new Set(["CONFIRMED", "COMPLETED", "FAILED", "REJECTED"]);
@@ -237,6 +239,48 @@ async function persistTrade(
   }
 }
 
+async function notifyTrade(match: Match, trade: TradePublic, action: ReportTradeInput["action"]) {
+  emitTradeEvent(trade);
+  const loaded = await prisma.match.findUnique({
+    where: { id: match.id },
+    include: { listing: { select: { energyType: true, marketZone: true, location: true } } },
+  });
+  if (loaded) emitMatchUpdated(toPublicMatch(loaded));
+
+  const recipients = [match.buyerId, match.sellerId];
+  let type: "PURCHASE_PENDING" | "PURCHASE_CONFIRMED" | "PURCHASE_FAILED" | "SETTLEMENT_PENDING" | "SETTLEMENT_CONFIRMED" | "SETTLEMENT_FAILED" =
+    action === "settle" ? "SETTLEMENT_PENDING" : "PURCHASE_PENDING";
+  let title = action === "settle" ? "Settlement pending" : "Purchase pending";
+  let body = `Trade ${trade.id} is ${trade.status.toLowerCase().replaceAll("_", " ")} after API verification.`;
+
+  if (trade.status === "CONFIRMED") {
+    type = "PURCHASE_CONFIRMED";
+    title = "Purchase confirmed";
+    body = `On-chain purchase for ${trade.quantityKwh} kWh was verified.`;
+  } else if (trade.status === "COMPLETED") {
+    type = "SETTLEMENT_CONFIRMED";
+    title = "Settlement confirmed";
+    body = `On-chain settlement for ${trade.quantityKwh} kWh was verified.`;
+  } else if (trade.status === "FAILED" || trade.status === "REJECTED") {
+    type = action === "settle" ? "SETTLEMENT_FAILED" : "PURCHASE_FAILED";
+    title = trade.status === "REJECTED" ? "Wallet rejected the transaction" : "Trade verification failed";
+    body =
+      trade.status === "REJECTED"
+        ? "The wallet declined the transaction. REST status is REJECTED, not confirmed."
+        : `Trade ${trade.id} failed verification and was not confirmed.`;
+  }
+
+  for (const userId of recipients) {
+    await createNotification({
+      userId,
+      type,
+      title,
+      body,
+      metadata: { tradeId: trade.id, matchId: match.id, status: trade.status, blockchainTxStatus: trade.blockchainTxStatus },
+    });
+  }
+}
+
 async function syncMatch(matchId: string, action: ReportTradeInput["action"], trade: Trade) {
   if (trade.blockchainTxStatus === "PENDING" || trade.status === "PENDING") {
     await prisma.match.update({
@@ -414,7 +458,9 @@ export async function reportTrade(
       },
       existing,
     );
-    return toPublicTrade(trade);
+    const publicTrade = toPublicTrade(trade);
+    await notifyTrade(match, publicTrade, input.action);
+    return publicTrade;
   }
 
   assertMatchSettleable(match, input.action, existing?.status);
@@ -440,7 +486,9 @@ export async function reportTrade(
   } catch (error) {
     if (error instanceof HttpError && error.code === "WRONG_NETWORK") {
       const trade = await markFailed(match, input, existing, error);
-      throw new HttpError(error.status, error.code, error.message, { trade: toPublicTrade(trade) });
+      const publicTrade = toPublicTrade(trade);
+      await notifyTrade(match, publicTrade, input.action);
+      throw new HttpError(error.status, error.code, error.message, { trade: publicTrade });
     }
     throw error;
   }
@@ -465,7 +513,9 @@ export async function reportTrade(
       existing,
     );
     await syncMatch(match.id, input.action, trade);
-    return toPublicTrade(trade);
+    const publicTrade = toPublicTrade(trade);
+    await notifyTrade(match, publicTrade, input.action);
+    return publicTrade;
   }
 
   const extras: Partial<TradeWrite> = {
@@ -490,13 +540,17 @@ export async function reportTrade(
       existing,
     );
     await syncMatch(match.id, input.action, trade);
-    throw new HttpError(409, "TX_REVERTED", "Transaction reverted on-chain", { trade: toPublicTrade(trade) });
+    const publicTrade = toPublicTrade(trade);
+    await notifyTrade(match, publicTrade, input.action);
+    throw new HttpError(409, "TX_REVERTED", "Transaction reverted on-chain", { trade: publicTrade });
   }
 
   if (!tx) {
     const error = new HttpError(409, "INVALID_EVENT", "Transaction was not found on the configured RPC");
     const trade = await markFailed(match, input, existing, error, extras);
-    throw new HttpError(error.status, error.code, error.message, { trade: toPublicTrade(trade) });
+    const publicTrade = toPublicTrade(trade);
+    await notifyTrade(match, publicTrade, input.action);
+    throw new HttpError(error.status, error.code, error.message, { trade: publicTrade });
   }
 
   try {
@@ -505,7 +559,9 @@ export async function reportTrade(
   } catch (error) {
     if (error instanceof HttpError) {
       const trade = await markFailed(match, input, existing, error, extras);
-      throw new HttpError(error.status, error.code, error.message, { trade: toPublicTrade(trade) });
+      const publicTrade = toPublicTrade(trade);
+      await notifyTrade(match, publicTrade, input.action);
+      throw new HttpError(error.status, error.code, error.message, { trade: publicTrade });
     }
     throw error;
   }
@@ -532,7 +588,9 @@ export async function reportTrade(
       metadata: { matchId: match.id, txHash },
     });
   }
-  return toPublicTrade(confirmed);
+  const publicTrade = toPublicTrade(confirmed);
+  await notifyTrade(match, publicTrade, input.action);
+  return publicTrade;
 }
 
 export async function getTradeById(

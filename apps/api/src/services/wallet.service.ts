@@ -6,6 +6,8 @@ import { randomHex } from "../lib/crypto.js";
 import { buildWalletChallenge } from "../lib/wallet-message.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
+import { emitDashboard } from "../socket/index.js";
+import { createNotification } from "./notification.service.js";
 
 const NONCE_TTL_MS = 5 * 60 * 1000;
 
@@ -148,6 +150,15 @@ export async function verifyWalletSignature(
     action: "WALLET_LINKED",
     entityType: "Wallet",
     entityId: verified.id,
+    metadata: { address, chainId: verified.chainId },
+  });
+
+  emitDashboard([userId], { reason: "wallet" });
+  await createNotification({
+    userId,
+    type: "WALLET_CONNECTED",
+    title: "Wallet verified",
+    body: `Wallet ${address} is linked and ready for marketplace actions.`,
     metadata: { address, chainId: verified.chainId },
   });
 

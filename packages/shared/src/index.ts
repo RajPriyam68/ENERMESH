@@ -9,3 +9,4 @@ export * from "./schemas/user.js";
 export * from "./schemas/listing.js";
 export * from "./schemas/bid.js";
 export * from "./schemas/trade.js";
+export * from "./schemas/notification.js";

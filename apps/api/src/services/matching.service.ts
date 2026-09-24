@@ -12,6 +12,15 @@ import {
 import { recordAudit } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
+import {
+  emitBidCreated,
+  emitBidExpired,
+  emitBidMatched,
+  emitBidUpdated,
+  emitListingUpdated,
+  emitMatchCreated,
+} from "../socket/index.js";
+import { createNotification } from "./notification.service.js";
 
 type ListingRow = Listing & { location: string };
 type BidRow = Bid;
@@ -359,7 +368,7 @@ export async function createBidAndMatch(
     });
   }
 
-  return { bid: toPublicBid(result.bid), matches: result.matches.map(toPublicMatch) };
+  return publishBidMatchResult(result, { created: true });
 }
 
 export async function rematchOpenBid(bidId: string): Promise<{ bid: BidPublic; matches: MatchPublic[] }> {
@@ -386,5 +395,68 @@ export async function rematchOpenBid(bidId: string): Promise<{ bid: BidPublic; m
     });
     return persistFills(tx, locked, listings);
   });
-  return { bid: toPublicBid(result.bid), matches: result.matches.map(toPublicMatch) };
+  if (result.bid.status === "EXPIRED" && result.matches.length === 0) {
+    const publicBid = toPublicBid(result.bid);
+    emitBidExpired(publicBid);
+    await createNotification({
+      userId: publicBid.buyerId,
+      type: "BID_EXPIRED",
+      title: "Bid expired",
+      body: `Your ${publicBid.energyType} bid in ${publicBid.marketZone} reached its required window.`,
+      metadata: { bidId: publicBid.id },
+    });
+    return { bid: publicBid, matches: [] };
+  }
+  return publishBidMatchResult(result, { created: false });
+}
+
+async function publishBidMatchResult(
+  result: {
+    bid: BidRow;
+    matches: MatchWithListing[];
+  },
+  options: { created: boolean },
+): Promise<{ bid: BidPublic; matches: MatchPublic[] }> {
+  const publicBid = toPublicBid(result.bid);
+  const publicMatches = result.matches.map(toPublicMatch);
+  if (options.created) emitBidCreated(publicBid);
+  else emitBidUpdated(publicBid);
+  if (publicMatches.length > 0) {
+    emitBidMatched(
+      publicBid,
+      publicMatches.map((match) => match.sellerId),
+    );
+  }
+
+  const listingIds = [...new Set(publicMatches.map((match) => match.listingId))];
+  if (listingIds.length > 0) {
+    const listings = await prisma.listing.findMany({
+      where: { id: { in: listingIds } },
+      include: { seller: { select: { displayName: true } } },
+    });
+    const { toPublicListing } = await import("./listing.service.js");
+    for (const listing of listings) {
+      emitListingUpdated(toPublicListing(listing));
+    }
+  }
+
+  for (const match of publicMatches) {
+    emitMatchCreated(match);
+    await createNotification({
+      userId: match.buyerId,
+      type: "BID_MATCHED",
+      title: "Bid matched",
+      body: `${match.matchedKwh} kWh matched in ${match.marketZone} at ${match.pricePerKwh} / kWh.`,
+      metadata: { matchId: match.id, listingId: match.listingId, bidId: match.bidId },
+    });
+    await createNotification({
+      userId: match.sellerId,
+      type: "BID_MATCHED",
+      title: "Listing matched",
+      body: `${match.matchedKwh} kWh of your ${match.energyType} offer was matched.`,
+      metadata: { matchId: match.id, listingId: match.listingId, bidId: match.bidId },
+    });
+  }
+
+  return { bid: publicBid, matches: publicMatches };
 }

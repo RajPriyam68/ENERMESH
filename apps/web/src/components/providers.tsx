@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect, useState, type ReactNode } from "react";
+import { RealtimeBridge } from "@/components/realtime/realtime-bridge";
 import { useAuthStore } from "@/lib/auth-store";
 
 const REFRESH_LEAD_MS = 60_000;
@@ -35,5 +36,10 @@ export function Providers({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [status, accessExpiresAt, refresh]);
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <RealtimeBridge />
+      {children}
+    </QueryClientProvider>
+  );
 }

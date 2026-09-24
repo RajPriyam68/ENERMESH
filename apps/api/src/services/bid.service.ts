@@ -3,7 +3,9 @@ import type { BidFilter, BidPublic, MatchFilter, MatchPublic } from "@enermesh/s
 import { recordAudit } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
+import { emitBidExpired, emitBidUpdated } from "../socket/index.js";
 import { toPublicBid, toPublicMatch } from "./matching.service.js";
+import { createNotification } from "./notification.service.js";
 
 const BID_SORT: Record<string, keyof Bid> = {
   createdAt: "createdAt",
@@ -13,7 +15,17 @@ const BID_SORT: Record<string, keyof Bid> = {
 
 async function expireBidIfNeeded(bid: Bid): Promise<Bid> {
   if ((bid.status === "OPEN" || bid.status === "PARTIALLY_MATCHED") && bid.requiredUntil.getTime() <= Date.now()) {
-    return prisma.bid.update({ where: { id: bid.id }, data: { status: "EXPIRED" } });
+    const expired = await prisma.bid.update({ where: { id: bid.id }, data: { status: "EXPIRED" } });
+    const publicBid = toPublicBid(expired);
+    emitBidExpired(publicBid);
+    await createNotification({
+      userId: expired.buyerId,
+      type: "BID_EXPIRED",
+      title: "Bid expired",
+      body: `Your ${expired.energyType} bid in ${expired.marketZone} reached its required window.`,
+      metadata: { bidId: expired.id },
+    });
+    return expired;
   }
   return bid;
 }
@@ -87,7 +99,16 @@ export async function cancelBid(
     entityId: bidId,
     metadata: { previousStatus: current.status },
   });
-  return toPublicBid(cancelled);
+  const publicBid = toPublicBid(cancelled);
+  emitBidUpdated(publicBid);
+  await createNotification({
+    userId: current.buyerId,
+    type: "SYSTEM",
+    title: "Bid cancelled",
+    body: `Remaining unmatched demand on your ${publicBid.energyType} bid was cancelled.`,
+    metadata: { bidId },
+  });
+  return publicBid;
 }
 
 export async function listMatches(

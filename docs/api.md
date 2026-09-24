@@ -125,10 +125,19 @@ Match status starts as `PROPOSED`. Verified purchase moves it to `SETTLEMENT_PEN
 
 The API queries `RPC_URL`, requires `CHAIN_ID` and `CONTRACT_ADDRESS`, and sets `CONFIRMED` only after a successful receipt plus the expected marketplace event, quantity, payment, and verified wallets. A missing receipt is `PENDING`. Reverts and invalid events are `FAILED` (`409`). Duplicate `txHash` / idempotency key returns `409 DUPLICATE_TX`. Wrong wallet/network/stale listing return `409`. The wallet UI cannot mark a trade `CONFIRMED`.
 
+### Notifications (S5)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/notifications` | access token | List own in-app notifications; `unreadOnly`, paginate |
+| POST | `/api/v1/notifications/:id/read` | owner | Mark one notification read |
+| POST | `/api/v1/notifications/read-all` | access token | Mark all notifications read |
+
+Socket.IO (path `SOCKET_PATH`, default `/socket.io`) requires a valid access token handshake. Server events: `listing:created|updated|expired`, `bid:created|updated|matched|expired`, `match:created|updated`, `trade:pending|confirmed|failed`, `notification:new`, `dashboard:updated`. Clients do not emit privileged marketplace state. Duplicate deliveries carry the same `eventId`. REST remains authoritative; a socket `trade:confirmed` is only sent after `POST /trades/report` verification.
+
 ## Planned surface (later sprints)
 
-`/transactions`, `/dashboard`, `/analytics`, `/notifications`, `/reports`,
-`/ai`, `/iot`.
+`/transactions`, `/dashboard`, `/analytics`, `/reports`, `/ai`, `/iot`.
 
 All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.
 

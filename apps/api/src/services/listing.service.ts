@@ -10,6 +10,8 @@ import {
 import { recordAudit } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
+import { createNotification } from "./notification.service.js";
+import { emitListingCreated, emitListingExpired, emitListingUpdated } from "../socket/index.js";
 
 const EDITABLE_STATUSES: ListingStatus[] = ["ACTIVE", "PARTIALLY_FILLED"];
 const PUBLIC_BROWSE_STATUSES: ListingStatus[] = ["ACTIVE", "PARTIALLY_FILLED"];
@@ -74,11 +76,21 @@ async function expireIfNeeded(listing: ListingWithSeller): Promise<ListingWithSe
     (listing.status === "ACTIVE" || listing.status === "PARTIALLY_FILLED") &&
     listing.availableUntil.getTime() <= Date.now()
   ) {
-    return prisma.listing.update({
+    const expired = await prisma.listing.update({
       where: { id: listing.id },
       data: { status: "EXPIRED" },
       include: { seller: { select: { displayName: true } } },
     });
+    const publicListing = toPublicListing(expired);
+    emitListingExpired(publicListing);
+    await createNotification({
+      userId: expired.sellerId,
+      type: "LISTING_UPDATED",
+      title: "Listing expired",
+      body: `Your ${expired.energyType} offer in ${expired.marketZone} reached its availability window.`,
+      metadata: { listingId: expired.id },
+    });
+    return expired;
   }
   return listing;
 }
@@ -140,7 +152,16 @@ export async function createListing(
     },
   });
 
-  return toPublicListing(listing);
+  const publicListing = toPublicListing(listing);
+  emitListingCreated(publicListing);
+  await createNotification({
+    userId: sellerId,
+    type: "LISTING_CREATED",
+    title: "Listing published",
+    body: `${publicListing.energyType} · ${publicListing.availableQuantityKwh} kWh in ${publicListing.marketZone} is live.`,
+    metadata: { listingId: listing.id },
+  });
+  return publicListing;
 }
 
 export async function getListingById(id: string): Promise<ListingPublic> {
@@ -293,7 +314,19 @@ export async function updateListing(
     metadata: { fields: Object.keys(input) },
   });
 
-  return toPublicListing(updated);
+  const publicListing = toPublicListing(updated);
+  emitListingUpdated(publicListing);
+  const priceChanged =
+    input.pricePerKwh !== undefined &&
+    roundPrice(input.pricePerKwh) !== decimalNumber(current.pricePerKwh);
+  await createNotification({
+    userId: current.sellerId,
+    type: priceChanged ? "PRICE_CHANGED" : "LISTING_UPDATED",
+    title: priceChanged ? "Listing price updated" : "Listing updated",
+    body: `Your ${publicListing.energyType} offer in ${publicListing.marketZone} was updated.`,
+    metadata: { listingId: listingId, fields: Object.keys(input) },
+  });
+  return publicListing;
 }
 
 export async function cancelListing(
@@ -330,5 +363,14 @@ export async function cancelListing(
     metadata: { previousStatus: current.status },
   });
 
-  return toPublicListing(cancelled);
+  const publicListing = toPublicListing(cancelled);
+  emitListingUpdated(publicListing);
+  await createNotification({
+    userId: current.sellerId,
+    type: "LISTING_UPDATED",
+    title: "Listing cancelled",
+    body: `Your ${publicListing.energyType} offer in ${publicListing.marketZone} is no longer available.`,
+    metadata: { listingId },
+  });
+  return publicListing;
 }

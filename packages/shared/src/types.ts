@@ -6,6 +6,7 @@ import type {
   EnergyType,
   ListingStatus,
   MatchStatus,
+  NotificationType,
   TradeStatus,
   UserRole,
 } from "./enums.js";
@@ -140,4 +141,52 @@ export interface HealthPayload {
   timestamp: string;
   database: "connected" | "disconnected" | "unknown";
   sprint: string;
+}
+
+export interface NotificationPublic {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  readAt: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface SocketEnvelope<T> {
+  eventId: string;
+  occurredAt: string;
+  data: T;
+}
+
+export interface ListingChangedPayload {
+  listingId: string;
+  listing?: ListingPublic;
+}
+
+export interface BidChangedPayload {
+  bid: BidPublic;
+}
+
+export interface MatchChangedPayload {
+  match: MatchPublic;
+}
+
+export interface TradeChangedPayload {
+  trade: TradePublic;
+}
+
+export interface DashboardUpdatedPayload {
+  reason: "listing" | "bid" | "match" | "trade" | "wallet";
+  listingId?: string;
+  bidId?: string;
+  matchId?: string;
+  tradeId?: string;
+}
+
+export interface SystemHelloPayload {
+  service: "enermesh";
+  sprint: string;
+  userId: string;
+  message: string;
 }

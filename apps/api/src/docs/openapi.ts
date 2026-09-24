@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 4 adds MetaMask trade reporting with server-side receipt and event verification. The API never marks a trade CONFIRMED from wallet UI alone.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 5 adds authenticated Socket.IO events after validated writes, plus in-app notifications. REST remains the source of truth. The API never marks a trade CONFIRMED from wallet UI alone.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -416,6 +416,46 @@ export const openApiDocument = {
         responses: {
           "200": envelope("Trade"),
           "403": envelope("Not a participant"),
+          "404": envelope("Not found"),
+        },
+      },
+    },
+    "/notifications": {
+      get: {
+        summary: "List in-app notifications for the current user",
+        tags: ["Notifications"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "unreadOnly", in: "query", schema: { type: "string", enum: ["true", "false", "1", "0"] } },
+        ],
+        responses: {
+          "200": envelope("Paginated notifications with unreadCount"),
+          "401": envelope("Authentication required"),
+        },
+      },
+    },
+    "/notifications/read-all": {
+      post: {
+        summary: "Mark all notifications as read",
+        tags: ["Notifications"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": envelope("updated count"),
+          "401": envelope("Authentication required"),
+        },
+      },
+    },
+    "/notifications/{id}/read": {
+      post: {
+        summary: "Mark one notification as read",
+        tags: ["Notifications"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        responses: {
+          "200": envelope("Notification"),
+          "401": envelope("Authentication required"),
           "404": envelope("Not found"),
         },
       },
