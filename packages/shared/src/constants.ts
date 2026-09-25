@@ -39,3 +39,5 @@ export const SOCKET_EVENTS = {
 
 export const RESEARCH_QUESTION =
   "How can a renewable-energy marketplace efficiently match decentralized energy supply and demand while providing transparent and independently verifiable digital trade settlement?";
+
+export const ESTIMATED_GRID_KG_CO2_PER_KWH = 0.4;

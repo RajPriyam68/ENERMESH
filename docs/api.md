@@ -135,9 +135,25 @@ The API queries `RPC_URL`, requires `CHAIN_ID` and `CONTRACT_ADDRESS`, and sets 
 
 Socket.IO (path `SOCKET_PATH`, default `/socket.io`) requires a valid access token handshake. Server events: `listing:created|updated|expired`, `bid:created|updated|matched|expired`, `match:created|updated`, `trade:pending|confirmed|failed`, `notification:new`, `dashboard:updated`. Clients do not emit privileged marketplace state. Duplicate deliveries carry the same `eventId`. REST remains authoritative; a socket `trade:confirmed` is only sent after `POST /trades/report` verification.
 
+### Pricing (S6)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/pricing/recommendation` | access token | Advisory price from confirmed trades and live offers/bids |
+
+Query: `energyType`, `marketZone`, `availableFrom`, `availableUntil`. Response `recommendation` includes `recommendedPrice` (null when insufficient), `range`, `confidence` (0–1), `reason`, `dataQuality`, `sourceLabel` (`ACTUAL`), `sampleCounts`, and `advisory: true`. The API never writes the recommended price onto a listing.
+
+### Analytics (S6)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/analytics` | access token | Labelled metrics for the caller; ADMIN sees platform totals |
+
+Query: `from`, `until`, `energyType`, `marketZone`. Energy traded and transaction value count only `CONFIRMED`/`COMPLETED` trades with `blockchainTxStatus=CONFIRMED`. Live supply is remaining kWh on ACTIVE/PARTIALLY_FILLED listings; live demand is unmatched kWh on OPEN/PARTIALLY_MATCHED bids. Carbon savings are `ESTIMATED`. Empty books return actual zeros, not sample data.
+
 ## Planned surface (later sprints)
 
-`/transactions`, `/dashboard`, `/analytics`, `/reports`, `/ai`, `/iot`.
+`/reports`, `/ai`, `/iot`.
 
 All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.
 

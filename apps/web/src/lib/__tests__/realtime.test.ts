@@ -4,9 +4,16 @@ import { envelopeEventId, queryKeysForSocketEvent, shouldApplyEvent } from "../r
 
 describe("realtime helpers", () => {
   it("maps marketplace events to REST query keys", () => {
-    assert.deepEqual(queryKeysForSocketEvent("listing:created"), [["listings"], ["listing"]]);
-    assert.deepEqual(queryKeysForSocketEvent("bid:matched"), [["bids"], ["bid"], ["matches"], ["listings"]]);
-    assert.deepEqual(queryKeysForSocketEvent("trade:confirmed"), [["matches"], ["trades"]]);
+    assert.deepEqual(queryKeysForSocketEvent("listing:created"), [["listings"], ["listing"], ["pricing"], ["analytics"]]);
+    assert.deepEqual(queryKeysForSocketEvent("bid:matched"), [
+      ["bids"],
+      ["bid"],
+      ["matches"],
+      ["listings"],
+      ["pricing"],
+      ["analytics"],
+    ]);
+    assert.deepEqual(queryKeysForSocketEvent("trade:confirmed"), [["matches"], ["trades"], ["analytics"], ["pricing"]]);
     assert.deepEqual(queryKeysForSocketEvent("notification:new"), [["notifications"]]);
     assert.deepEqual(queryKeysForSocketEvent("dashboard:updated"), [
       ["listings"],
@@ -14,6 +21,8 @@ describe("realtime helpers", () => {
       ["matches"],
       ["notifications"],
       ["wallets"],
+      ["analytics"],
+      ["pricing"],
     ]);
     assert.deepEqual(queryKeysForSocketEvent("unknown:event"), []);
   });

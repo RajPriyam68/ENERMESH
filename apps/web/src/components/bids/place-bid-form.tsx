@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { PriceRecommendationPanel } from "@/components/pricing/price-recommendation";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -37,6 +38,8 @@ export function PlaceBidForm({ listing }: { listing?: ListingPublic }) {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { isSubmitting },
   } = useForm<BidFormValues>({
     defaultValues: {
@@ -48,6 +51,11 @@ export function PlaceBidForm({ listing }: { listing?: ListingPublic }) {
       requiredUntil: listing ? toDatetimeLocal(listing.availableUntil) : windowDefaults.requiredUntil,
     },
   });
+
+  const energyType = watch("energyType");
+  const marketZone = watch("marketZone");
+  const requiredFrom = watch("requiredFrom");
+  const requiredUntil = watch("requiredUntil");
 
   if (status !== "authenticated") {
     return (
@@ -127,6 +135,14 @@ export function PlaceBidForm({ listing }: { listing?: ListingPublic }) {
       <Field label="Max price per kWh" htmlFor="maxPricePerKwh" error={fieldErrors.maxPricePerKwh}>
         <Input id="maxPricePerKwh" type="number" min="0" step="0.0001" {...register("maxPricePerKwh", { valueAsNumber: true })} />
       </Field>
+      <PriceRecommendationPanel
+        energyType={energyType}
+        marketZone={marketZone}
+        availableFrom={requiredFrom ? fromDatetimeLocal(requiredFrom).toISOString() : undefined}
+        availableUntil={requiredUntil ? fromDatetimeLocal(requiredUntil).toISOString() : undefined}
+        applyLabel="Use recommended max price"
+        onApply={(price) => setValue("maxPricePerKwh", price, { shouldDirty: true })}
+      />
       <Field label="Energy type" htmlFor="energyType" error={fieldErrors.energyType}>
         <Select id="energyType" {...register("energyType")} disabled={Boolean(listing)}>
           {ENERGY_TYPES.map((type) => (

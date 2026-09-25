@@ -4,6 +4,7 @@ import { AuthNav } from "@/components/layout/auth-nav";
 const nav = [
   { href: "/", label: "Home" },
   { href: "/marketplace", label: "Marketplace" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/about", label: "About" },
 ];
 

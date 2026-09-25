@@ -57,14 +57,22 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 ## S5 coverage
 
 - Socket handshake: missing token and invalid token rejected with `UNAUTHENTICATED`
-- Valid access token receives `system:hello` with sprint `S5`
+- Valid access token receives `system:hello` with sprint label (S6 after this sprint)
 - `listing:created` emitted only after a validated POST; client-originated privileged emits are ignored
 - Notification REST: unauthenticated 401, missing id 404, listing author receives `LISTING_CREATED`
 - Web: socket event → query-key mapping; duplicate `eventId` dropped
 
+## S6 coverage
+
+- Shared price recommender: empty book → null + INSUFFICIENT; completed trades outweigh outlier asks; advisory flag always true
+- Shared analytics helpers: VWAP undefined on zero volume; carbon savings labelled ESTIMATED; empty sums stay ACTUAL 0
+- Price API: unauthenticated 401; empty filters INSUFFICIENT; live listing produces advisory ask from remaining kWh
+- Analytics API: unauthenticated 401; labelled zeros; seller supply from own remaining kWh; foreign confirmed volume does not leak
+- Web: `/dashboard` protected; price query encoding; socket events invalidate analytics/pricing keys
+
 ## Planned (later sprints)
 
-Listing on-chain id persistence on the Listing row.
+Optional AI adapters; listing on-chain id persistence on the Listing row.
 
 ## Commands
 

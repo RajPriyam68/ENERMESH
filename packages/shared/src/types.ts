@@ -132,6 +132,53 @@ export interface PriceRecommendation {
   reason: string;
   dataQuality: DataQuality;
   sourceLabel: DataSourceLabel;
+  sampleCounts: { trades: number; asks: number; bids: number };
+  advisory: true;
+  filters: {
+    energyType?: EnergyType;
+    marketZone?: string;
+  };
+}
+
+export interface LabelledMetric {
+  value: number | null;
+  unit: string;
+  sourceLabel: DataSourceLabel;
+  dataQuality: DataQuality;
+  note: string;
+}
+
+export interface AnalyticsSeriesPoint {
+  date: string;
+  energyTradedKwh: number;
+  transactionValue: number;
+  sourceLabel: DataSourceLabel;
+}
+
+export interface AnalyticsBreakdownRow {
+  key: string;
+  energyTradedKwh: number;
+  transactionValue: number;
+  sourceLabel: DataSourceLabel;
+}
+
+export interface AnalyticsSnapshot {
+  scope: "self" | "platform";
+  energyTradedKwh: LabelledMetric;
+  transactionValue: LabelledMetric;
+  averagePricePerKwh: LabelledMetric;
+  supplyKwh: LabelledMetric;
+  demandKwh: LabelledMetric;
+  matchedKwh: LabelledMetric;
+  unmatchedKwh: LabelledMetric;
+  revenue: LabelledMetric;
+  spending: LabelledMetric;
+  renewableShare: LabelledMetric;
+  estimatedCarbonSavingsKg: LabelledMetric;
+  byEnergyType: AnalyticsBreakdownRow[];
+  byMarketZone: AnalyticsBreakdownRow[];
+  series: AnalyticsSeriesPoint[];
+  generatedAt: string;
 }
 
 export interface HealthPayload {

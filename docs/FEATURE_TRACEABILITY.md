@@ -20,9 +20,9 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | MetaMask + Solidity trade | S4 | `packages/contracts/contracts/EnerMeshMarketplace.sol`, `apps/web/src/components/trades` | Rejection vs revert vs fail |
 | Receipt verification | S4 | `apps/api/src/services/settlement.service.ts`, `POST /trades/report` | False confirm = 0; pending/failed/rejected distinct |
 | Socket.IO notifications | S5 | `apps/api/src/socket/index.ts`, `apps/api/src/services/notification.service.ts`, `apps/web/src/lib/use-realtime.ts` | Event latency; client emit accepted = 0 |
-| Price + analytics | S7 | planned | Confidence, dataQuality labelled |
-| AI adapters | S8 | planned | Advisory-only; app works without key |
-| IoT adapters | S9 | planned | Simulated vs actual labels |
+| Price + analytics | S6 | `packages/shared/src/pricing.ts`, `apps/api/src/services/price.service.ts`, `apps/api/src/services/analytics.service.ts`, `apps/web/src/app/dashboard` | Confidence and dataQuality labelled; empty book remains 0 |
+| AI adapters | S7 | planned | Advisory-only; app works without key |
+| IoT adapters | S8 | planned | Simulated vs actual labels |
 | Reports / admin / audit | S10 | planned | Audit completeness |
 | Security tests | S11 | planned | Failure rate |
 | Deploy polish | S12 | planned | Demo path green |

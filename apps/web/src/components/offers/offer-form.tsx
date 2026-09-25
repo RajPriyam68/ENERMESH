@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { PriceRecommendationPanel } from "@/components/pricing/price-recommendation";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -53,6 +54,8 @@ export function OfferForm({ listing }: { listing?: ListingPublic }) {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { isSubmitting },
   } = useForm<OfferFormValues>({
     defaultValues: listing
@@ -79,6 +82,11 @@ export function OfferForm({ listing }: { listing?: ListingPublic }) {
           availableUntil: windowDefaults.availableUntil,
         },
   });
+
+  const energyType = watch("energyType");
+  const marketZone = watch("marketZone");
+  const availableFrom = watch("availableFrom");
+  const availableUntil = watch("availableUntil");
 
   const onSubmit = handleSubmit(async (values) => {
     setFormError(null);
@@ -169,6 +177,13 @@ export function OfferForm({ listing }: { listing?: ListingPublic }) {
       <Field label="Price per kWh" htmlFor="pricePerKwh" error={fieldErrors.pricePerKwh}>
         <Input id="pricePerKwh" type="number" min="0" step="0.0001" {...register("pricePerKwh", { valueAsNumber: true })} />
       </Field>
+      <PriceRecommendationPanel
+        energyType={energyType}
+        marketZone={marketZone}
+        availableFrom={availableFrom ? fromDatetimeLocal(availableFrom).toISOString() : undefined}
+        availableUntil={availableUntil ? fromDatetimeLocal(availableUntil).toISOString() : undefined}
+        onApply={(price) => setValue("pricePerKwh", price, { shouldDirty: true })}
+      />
 
       <Field label="Location" htmlFor="location" error={fieldErrors.location}>
         <Input id="location" {...register("location")} />

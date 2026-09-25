@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S5 — Socket.IO + in-app notifications** is complete. Next is **S6 hybrid polish** (on-chain listing ids). See `docs/PROJECT_STATE.md`.
+**S6 — advisory price recommendation + labelled analytics** is complete. Next is optional AI adapters (S7). See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 

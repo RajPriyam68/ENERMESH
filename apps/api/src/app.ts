@@ -8,6 +8,7 @@ import { env, trustProxySetting } from "./config/env.js";
 import { openApiDocument } from "./docs/openapi.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { adminRouter } from "./routes/admin.js";
+import { analyticsRouter } from "./routes/analytics.js";
 import { authRouter } from "./routes/auth.js";
 import { healthRouter } from "./routes/health.js";
 import { usersRouter } from "./routes/users.js";
@@ -15,6 +16,7 @@ import { bidsRouter } from "./routes/bids.js";
 import { listingsRouter } from "./routes/listings.js";
 import { matchesRouter } from "./routes/matches.js";
 import { notificationsRouter } from "./routes/notifications.js";
+import { pricingRouter } from "./routes/pricing.js";
 import { tradesRouter } from "./routes/trades.js";
 import { walletsRouter } from "./routes/wallets.js";
 
@@ -67,6 +69,8 @@ export function createApp() {
   app.use(`${API_PREFIX}/matches`, matchesRouter);
   app.use(`${API_PREFIX}/trades`, tradesRouter);
   app.use(`${API_PREFIX}/notifications`, notificationsRouter);
+  app.use(`${API_PREFIX}/pricing`, pricingRouter);
+  app.use(`${API_PREFIX}/analytics`, analyticsRouter);
   app.use(`${API_PREFIX}/admin`, adminRouter);
   app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(openApiDocument));
 

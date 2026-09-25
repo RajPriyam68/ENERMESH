@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 5 adds authenticated Socket.IO events after validated writes, plus in-app notifications. REST remains the source of truth. The API never marks a trade CONFIRMED from wallet UI alone.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 6 adds advisory price recommendations and labelled analytics from real listings, bids, and confirmed trades. REST remains the source of truth. The API never marks a trade CONFIRMED from wallet UI alone.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -457,6 +457,42 @@ export const openApiDocument = {
           "200": envelope("Notification"),
           "401": envelope("Authentication required"),
           "404": envelope("Not found"),
+        },
+      },
+    },
+    "/pricing/recommendation": {
+      get: {
+        summary: "Advisory price recommendation from completed trades and live offers/bids",
+        tags: ["Pricing"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "energyType", in: "query", schema: { type: "string" } },
+          { name: "marketZone", in: "query", schema: { type: "string" } },
+          { name: "availableFrom", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "availableUntil", in: "query", schema: { type: "string", format: "date-time" } },
+        ],
+        responses: {
+          "200": envelope("recommendedPrice, range, confidence, reason, dataQuality; never auto-applied"),
+          "401": envelope("Authentication required"),
+          "422": envelope("Validation failed"),
+        },
+      },
+    },
+    "/analytics": {
+      get: {
+        summary: "Labelled marketplace analytics for the current user (ADMIN sees platform totals)",
+        tags: ["Analytics"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "until", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "energyType", in: "query", schema: { type: "string" } },
+          { name: "marketZone", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": envelope("Labelled metrics; empty marketplace stays at actual 0; carbon savings are ESTIMATED"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Role not permitted"),
         },
       },
     },
