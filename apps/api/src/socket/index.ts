@@ -4,6 +4,8 @@ import type {
   BidChangedPayload,
   BidPublic,
   DashboardUpdatedPayload,
+  EnergyChangedPayload,
+  EnergyHistoryPublic,
   ListingChangedPayload,
   ListingPublic,
   MatchChangedPayload,
@@ -140,6 +142,11 @@ export function emitNotification(userId: string, notification: NotificationPubli
   emitToUsers([userId], SOCKET_EVENTS.notificationNew, notification);
 }
 
+export function emitEnergyUpdated(sample: EnergyHistoryPublic): void {
+  const payload: EnergyChangedPayload = { sample };
+  emitToUsers([sample.userId], SOCKET_EVENTS.energyUpdated, payload);
+}
+
 export function emitDashboard(userIds: Array<string | null | undefined>, payload: DashboardUpdatedPayload): void {
   emitToUsers(userIds, SOCKET_EVENTS.dashboardUpdated, payload);
 }
@@ -192,7 +199,7 @@ export function createSocketServer(httpServer: HttpServer) {
     const user = socket.data.user as { id: string; role: string };
     const hello: SystemHelloPayload = {
       service: "enermesh",
-      sprint: "S7",
+      sprint: "S8",
       userId: user.id,
       message: "Realtime channel ready. Privileged events are server-emitted only.",
     };

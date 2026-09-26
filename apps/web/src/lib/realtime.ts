@@ -12,7 +12,8 @@ const EVENT_QUERY_KEYS: Record<string, string[][]> = {
   "trade:confirmed": [["matches"], ["trades"], ["analytics"], ["pricing"]],
   "trade:failed": [["matches"], ["trades"], ["analytics"]],
   "notification:new": [["notifications"]],
-  "dashboard:updated": [["listings"], ["bids"], ["matches"], ["notifications"], ["wallets"], ["analytics"], ["pricing"]],
+  "energy:updated": [["iot"]],
+  "dashboard:updated": [["listings"], ["bids"], ["matches"], ["notifications"], ["wallets"], ["analytics"], ["pricing"], ["iot"]],
 };
 
 export function queryKeysForSocketEvent(event: string): string[][] {

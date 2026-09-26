@@ -30,6 +30,9 @@ const envSchema = z.object({
   USER_LLM_BASE_URL: z.string().optional().default(""),
   USER_LLM_MODEL: z.string().optional().default(""),
   USER_LLM_PROVIDER: z.string().optional().default(""),
+  MQTT_URL: z.string().optional().default(""),
+  MQTT_USERNAME: z.string().optional().default(""),
+  MQTT_PASSWORD: z.string().optional().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;

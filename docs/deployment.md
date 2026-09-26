@@ -34,4 +34,4 @@ Compose starts Postgres, API (3001), and web (3000). Healthchecks are defined fo
 
 ## Secrets
 
-Use the host secret store. Never commit `.env`. LLM keys are optional (`USER_LLM_*`) and stay on the API. The marketplace works when they are empty; S7 then returns a deterministic labelled fallback.
+Use the host secret store. Never commit `.env`. LLM keys are optional (`USER_LLM_*`) and stay on the API. The marketplace works when they are empty; S7 then returns a deterministic labelled fallback. MQTT vars (`MQTT_URL`, `MQTT_USERNAME`, `MQTT_PASSWORD`) are optional; S8 does not open a broker connection.

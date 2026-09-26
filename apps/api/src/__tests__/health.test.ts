@@ -17,7 +17,7 @@ describe("health routes", () => {
     assert.equal(res.status, 200);
     assert.equal(body.success, true);
     assert.equal(body.data.status, "ok");
-    assert.equal(body.data.sprint, "S7");
+    assert.equal(body.data.sprint, "S8");
     assert.equal(body.data.service, "enermesh-api");
   });
 });

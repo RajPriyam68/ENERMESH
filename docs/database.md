@@ -13,7 +13,7 @@ Provider: PostgreSQL 16 via Prisma. Connection string: `DATABASE_URL` (any compa
 - **Match** — listing+bid, matched kWh, price, status
 - **Trade** — quantities, amounts, blockchain fields, unique `txHash`, unique `idempotencyKey`
 - **Notification** — type, title, body, read timestamp, metadata JSON. S5 writes rows after validated listing, bid, match, trade, and wallet events and exposes them at `/notifications`.
-- **EnergyHistory** — kWh samples with `ACTUAL | ESTIMATED | SIMULATED` (IoT later). S6 analytics and S7 AI insights do not invent EnergyHistory rows; carbon savings are computed and labelled ESTIMATED. S7 audit rows use `ADMIN_ACTION` with entityType `AiInsight`.
+- **EnergyHistory** — kWh samples with `ACTUAL | ESTIMATED | SIMULATED`. S8 HTTP/simulated adapters persist rows; metadata records adapter and optional energy type. S6 analytics and S7 AI insights still do not invent EnergyHistory rows; carbon savings remain ESTIMATED. S8 audit rows use `ADMIN_ACTION` with entityType `EnergyHistory`.
 - **AuditLog** — action, entity, optional user, IP, metadata
 
 ## Integrity rules (enforced in S2–S5 application transactions; columns prepared in S0)

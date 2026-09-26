@@ -15,6 +15,7 @@ describe("realtime helpers", () => {
     ]);
     assert.deepEqual(queryKeysForSocketEvent("trade:confirmed"), [["matches"], ["trades"], ["analytics"], ["pricing"]]);
     assert.deepEqual(queryKeysForSocketEvent("notification:new"), [["notifications"]]);
+    assert.deepEqual(queryKeysForSocketEvent("energy:updated"), [["iot"]]);
     assert.deepEqual(queryKeysForSocketEvent("dashboard:updated"), [
       ["listings"],
       ["bids"],
@@ -23,6 +24,7 @@ describe("realtime helpers", () => {
       ["wallets"],
       ["analytics"],
       ["pricing"],
+      ["iot"],
     ]);
     assert.deepEqual(queryKeysForSocketEvent("unknown:event"), []);
   });

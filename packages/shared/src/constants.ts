@@ -35,6 +35,7 @@ export const SOCKET_EVENTS = {
   tradeFailed: "trade:failed",
   notificationNew: "notification:new",
   dashboardUpdated: "dashboard:updated",
+  energyUpdated: "energy:updated",
 } as const;
 
 export const RESEARCH_QUESTION =

@@ -160,9 +160,20 @@ Query: `from`, `until`, `energyType`, `marketZone`. Energy traded and transactio
 
 Body: `topic` (`market` \| `price` \| `listing` \| `bid` \| `dashboard`), optional `question`, `energyType`, `marketZone`, `listingId`, `bidId`. `listing` requires `listingId`; `bid` requires `bidId` and is owner/ADMIN only. Response includes `insight` (`advisory: true`, `actionsEnabled: false`, `usedFallback`, labelled `facts`) and `status`. Unconfigured or invalid model JSON uses the deterministic S6 fallback. Rate limit: 20 requests / minute / IP on `/ai/insights`.
 
+### IoT / EnergyHistory (S8)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/iot/status` | access token | Adapter flags; MQTT password is never returned |
+| GET | `/api/v1/iot/history` | access token | Labelled samples for the caller; ADMIN may pass `userId` |
+| POST | `/api/v1/iot/readings` | access token | Ingest one labelled reading |
+| POST | `/api/v1/iot/simulate` | access token | Generate `SIMULATED` samples |
+
+Body for ingest: `kwh`, optional `recordedAt`, `deviceId`, `sourceLabel` (`ACTUAL` default), `energyType`. Simulate: `kwh`, optional `samples` (1–24), `intervalMinutes`, `deviceId`, `energyType`. History query: `from`, `until`, `sourceLabel`, `deviceId`, pagination. Empty history returns actual zeros. Telemetry never writes listings, bids, matches, or trades. Rate limit: 40 requests / minute / IP on `/iot/readings` and `/iot/simulate`.
+
 ## Planned surface (later sprints)
 
-`/reports`, `/iot`.
+`/reports`.
 
 All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.
 
@@ -170,7 +181,7 @@ All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotenc
 
 - HTTP 401 unauthenticated, 403 forbidden, 404 missing, 409 conflict (e.g. oversell), 410 expired challenge,
   422 validation, 429 rate limit, 503 not ready
-- Rate limit: 120 requests / minute / IP globally; 20 requests / minute / IP on `/auth/*` and `/ai/insights`
+- Rate limit: 120 requests / minute / IP globally; 20 requests / minute / IP on `/auth/*` and `/ai/insights`; 40 requests / minute / IP on `/iot/readings` and `/iot/simulate`
 - CORS origin from `WEB_ORIGIN`
 - Socket.IO path from `SOCKET_PATH`; the handshake requires a valid access token and clients do not emit
   privileged events

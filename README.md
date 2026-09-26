@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S7 — optional provider-agnostic AI advisory layer** is complete. Matching, settlement, and dashboards work without an AI key. Next is IoT adapters (S8). See `docs/PROJECT_STATE.md`.
+**S8 — IoT adapters and labelled EnergyHistory** is complete. Simulated samples stay SIMULATED and never invent marketplace volume. Next is reports/admin (S9). See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 

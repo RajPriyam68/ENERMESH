@@ -9,6 +9,6 @@ createSocketServer(httpServer);
 
 httpServer.listen(env.API_PORT, env.API_HOST, () => {
   process.stdout.write(
-    `EnerMesh API listening on http://${env.API_HOST}:${env.API_PORT} (sprint S7)\n`,
+    `EnerMesh API listening on http://${env.API_HOST}:${env.API_PORT} (sprint S8)\n`,
   );
 });

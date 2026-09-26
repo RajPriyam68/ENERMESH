@@ -275,6 +275,47 @@ export interface AiStatus {
   actionsEnabled: false;
 }
 
+export const IotAdapterName = {
+  HTTP: "http",
+  SIMULATED: "simulated",
+  MQTT: "mqtt",
+} as const;
+export type IotAdapterName = (typeof IotAdapterName)[keyof typeof IotAdapterName];
+
+export interface EnergyHistoryPublic {
+  id: string;
+  userId: string;
+  deviceId: string | null;
+  kwh: number;
+  recordedAt: string;
+  sourceLabel: DataSourceLabel;
+  energyType: EnergyType | null;
+  adapter: IotAdapterName;
+  createdAt: string;
+}
+
+export interface EnergyHistorySourceTotals {
+  sampleCount: number;
+  totalKwh: number;
+}
+
+export interface EnergyHistorySummary {
+  sampleCount: number;
+  totalKwh: number;
+  bySourceLabel: Record<DataSourceLabel, EnergyHistorySourceTotals>;
+  firstRecordedAt: string | null;
+  lastRecordedAt: string | null;
+}
+
+export interface IotStatus {
+  httpIngest: true;
+  simulated: true;
+  mqttConfigured: boolean;
+  mqttAvailable: false;
+  writesMarketplace: false;
+  advisoryOnly: true;
+}
+
 export interface HealthPayload {
   status: "ok" | "degraded";
   service: "enermesh-api";
@@ -317,12 +358,17 @@ export interface TradeChangedPayload {
   trade: TradePublic;
 }
 
+export interface EnergyChangedPayload {
+  sample: EnergyHistoryPublic;
+}
+
 export interface DashboardUpdatedPayload {
-  reason: "listing" | "bid" | "match" | "trade" | "wallet";
+  reason: "listing" | "bid" | "match" | "trade" | "wallet" | "energy";
   listingId?: string;
   bidId?: string;
   matchId?: string;
   tradeId?: string;
+  energyHistoryId?: string;
 }
 
 export interface SystemHelloPayload {

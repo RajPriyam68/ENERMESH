@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 7 adds an optional, provider-agnostic AI advisory layer on top of labelled S6 facts. AI never executes trades or marks a trade CONFIRMED. REST remains the source of truth.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 8 adds labelled EnergyHistory ingest (HTTP + simulated adapters). Telemetry never writes listings, bids, matches, or CONFIRMED trades. REST remains the source of truth.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -500,6 +500,66 @@ export const openApiDocument = {
           "401": envelope("Authentication required"),
           "403": envelope("Bid belongs to another user"),
           "404": envelope("Listing or bid not found"),
+          "422": envelope("Validation failed"),
+          "429": envelope("Rate limited"),
+        },
+      },
+    },
+    "/iot/status": {
+      get: {
+        summary: "IoT adapter flags (HTTP ingest, simulated, MQTT configured but unused)",
+        tags: ["IoT"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": envelope("httpIngest/simulated true; mqttAvailable false; writesMarketplace false"),
+          "401": envelope("Authentication required"),
+        },
+      },
+    },
+    "/iot/history": {
+      get: {
+        summary: "List labelled EnergyHistory samples for the caller (ADMIN may pass userId)",
+        tags: ["IoT"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "until", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "sourceLabel", in: "query", schema: { type: "string", enum: ["ACTUAL", "ESTIMATED", "SIMULATED"] } },
+          { name: "deviceId", in: "query", schema: { type: "string" } },
+          { name: "userId", in: "query", schema: { type: "string", format: "uuid" } },
+        ],
+        responses: {
+          "200": envelope("samples + labelled summary; empty history stays at actual 0"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Cannot read another user's energy history"),
+        },
+      },
+    },
+    "/iot/readings": {
+      post: {
+        summary: "Ingest one labelled meter reading. Does not change listings, bids, or trades.",
+        tags: ["IoT"],
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonBody("kwh, optional recordedAt, deviceId, sourceLabel, energyType"),
+        responses: {
+          "201": envelope("Persisted EnergyHistory sample with sourceLabel"),
+          "401": envelope("Authentication required"),
+          "422": envelope("Validation failed"),
+          "429": envelope("Rate limited"),
+        },
+      },
+    },
+    "/iot/simulate": {
+      post: {
+        summary: "Generate SIMULATED EnergyHistory samples. Never writes marketplace volume.",
+        tags: ["IoT"],
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonBody("kwh, optional samples, intervalMinutes, deviceId, energyType"),
+        responses: {
+          "201": envelope("SIMULATED samples plus labelled summary"),
+          "401": envelope("Authentication required"),
           "422": envelope("Validation failed"),
           "429": envelope("Rate limited"),
         },

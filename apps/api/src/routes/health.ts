@@ -16,7 +16,7 @@ healthRouter.get(
       version: "0.1.0",
       timestamp: new Date().toISOString(),
       database: "unknown",
-      sprint: "S7",
+      sprint: "S8",
       chain: {
         chainId: env.CHAIN_ID,
         name: env.CHAIN_NAME,
@@ -35,7 +35,7 @@ healthRouter.get(
       version: "0.1.0",
       timestamp: new Date().toISOString(),
       database: connected ? "connected" : "disconnected",
-      sprint: "S7",
+      sprint: "S8",
     };
     if (!connected) {
       return fail(res, "NOT_READY", "Database is not reachable", 503, payload);
