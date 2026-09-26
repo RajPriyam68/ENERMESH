@@ -21,7 +21,7 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | Receipt verification | S4 | `apps/api/src/services/settlement.service.ts`, `POST /trades/report` | False confirm = 0; pending/failed/rejected distinct |
 | Socket.IO notifications | S5 | `apps/api/src/socket/index.ts`, `apps/api/src/services/notification.service.ts`, `apps/web/src/lib/use-realtime.ts` | Event latency; client emit accepted = 0 |
 | Price + analytics | S6 | `packages/shared/src/pricing.ts`, `apps/api/src/services/price.service.ts`, `apps/api/src/services/analytics.service.ts`, `apps/web/src/app/dashboard` | Confidence and dataQuality labelled; empty book remains 0 |
-| AI adapters | S7 | planned | Advisory-only; app works without key |
+| AI adapters | S7 | `packages/shared/src/ai.ts`, `apps/api/src/services/ai.service.ts`, `apps/web/src/components/ai/advisor-panel.tsx` | Advisory-only; app works without key; empty book stays 0 |
 | IoT adapters | S8 | planned | Simulated vs actual labels |
 | Reports / admin / audit | S10 | planned | Audit completeness |
 | Security tests | S11 | planned | Failure rate |

@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 6 adds advisory price recommendations and labelled analytics from real listings, bids, and confirmed trades. REST remains the source of truth. The API never marks a trade CONFIRMED from wallet UI alone.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 7 adds an optional, provider-agnostic AI advisory layer on top of labelled S6 facts. AI never executes trades or marks a trade CONFIRMED. REST remains the source of truth.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -475,6 +475,33 @@ export const openApiDocument = {
           "200": envelope("recommendedPrice, range, confidence, reason, dataQuality; never auto-applied"),
           "401": envelope("Authentication required"),
           "422": envelope("Validation failed"),
+        },
+      },
+    },
+    "/ai/status": {
+      get: {
+        summary: "AI adapter status (never includes API keys)",
+        tags: ["AI"],
+        security: [{ bearerAuth: [] }],
+        responses: {
+          "200": envelope("configured/available flags, provider name, advisoryOnly; keys are never returned"),
+          "401": envelope("Authentication required"),
+        },
+      },
+    },
+    "/ai/insights": {
+      post: {
+        summary: "Advisory insight from labelled S6 facts; falls back when no provider is configured",
+        tags: ["AI"],
+        security: [{ bearerAuth: [] }],
+        requestBody: jsonBody("topic, optional question, energyType, marketZone, listingId, bidId"),
+        responses: {
+          "200": envelope("insight + status; usedFallback true when provider missing or invalid JSON"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Bid belongs to another user"),
+          "404": envelope("Listing or bid not found"),
+          "422": envelope("Validation failed"),
+          "429": envelope("Rate limited"),
         },
       },
     },

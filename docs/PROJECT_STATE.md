@@ -1,8 +1,8 @@
 # EnerMesh project state
 
-Last updated: 2026-09-24
-Current sprint: **S6 advisory price recommendation + labelled analytics** — COMPLETE
-Next sprint: S7 optional AI adapters (core marketplace already works without an AI key). Hybrid on-chain listing ids remain later polish.
+Last updated: 2026-09-25
+Current sprint: **S7 provider-independent AI advisory adapters** — COMPLETE
+Next sprint: S8 IoT adapters / EnergyHistory. Hybrid on-chain listing ids remain later polish.
 
 ## Protocol
 
@@ -19,22 +19,23 @@ Before each sprint: read this file, inspect the repo, implement **only** the cur
 | S4 | Solidity listing/purchase/settle, MetaMask UX, backend receipt/event verification | COMPLETE |
 | S5 | Socket.IO events after validated writes, in-app notifications, REST-backed UI refresh | COMPLETE |
 | S6 | Advisory price recommendation, labelled analytics dashboards | COMPLETE |
-| S7 | Provider-independent AI adapters (optional) | NOT STARTED |
+| S7 | Provider-independent AI adapters (optional) | COMPLETE |
 | S8 | IoT adapters, EnergyHistory, simulated-data labels | NOT STARTED |
 | S9 | Reports, admin, audit logs | NOT STARTED |
 | S10 | Security, testing, performance | NOT STARTED |
 | S11 | Docker/CI polish, production scripts, demo path | NOT STARTED |
 | S12 | Hybrid DB sync / on-chain listing id persistence (deferred polish) | NOT STARTED |
 
-## What exists after S6
+## What exists after S7
 
-Building on S5:
+Building on S6:
 
-- **Price recommendation** — `GET /pricing/recommendation` is authenticated. It weights confirmed/completed trades (chain-verified) plus live ACTIVE/PARTIALLY_FILLED offers and OPEN/PARTIALLY_MATCHED bids. Response includes `recommendedPrice`, `range`, `confidence`, `reason`, `dataQuality`, `sourceLabel`, and `sampleCounts`. Empty books return `null` with `INSUFFICIENT`. Advisory only; the seller still types the listed price.
-- **Analytics** — `GET /analytics` is role-scoped: buyers/sellers see their own confirmed volume, revenue, and spending; ADMIN sees platform totals. Metrics: energy traded, transaction value, average price/kWh, live supply/demand, matched/unmatched, renewable share, estimated carbon savings. Each metric carries `sourceLabel` (`ACTUAL` vs `ESTIMATED`) and `dataQuality`. Carbon savings use a documented grid factor and are never labelled actual. Empty marketplace stays at actual 0; average price is undefined, not invented.
-- **Web** — offer and bid forms show the advisory panel; `/dashboard` charts use recharts with loading/empty/error states. Socket invalidation includes `pricing` and `analytics` query keys. AI is unused.
+- **AI advisory** — `GET /ai/status` and `POST /ai/insights` are authenticated. Insights explain labelled S6 price recommendations, analytics, listing remaining kWh, and owned bids. Output is always `advisory: true` and `actionsEnabled: false`.
+- **Provider-agnostic adapter** — `USER_LLM_PROVIDER` / `USER_LLM_BASE_URL` / `USER_LLM_MODEL` / `USER_LLM_API_KEY` on the API only. Supports OpenAI, Gemini, and OpenAI-compatible/local endpoints. Missing or invalid configuration returns a deterministic S6 fallback. Keys never reach the frontend or `/ai/status`.
+- **Prompt isolation** — marketplace fields and the user question are sanitized and wrapped as untrusted data. Injection phrases are redacted. Model JSON is schema-validated; malformed replies fall back.
+- **Web** — `/advisor` plus advisor panels on dashboard, listing detail, and bid detail. Loading, error, and unconfigured states are explicit. Charts and settlement UX are unchanged.
 
-## Validation (S6)
+## Validation (S7)
 
 - `npm run typecheck`
 - `npm run lint`
@@ -42,21 +43,20 @@ Building on S5:
 - `npm run build`
 - `npx hardhat test` in `packages/contracts`
 
-S6 test coverage added:
+S7 test coverage added:
 
-- Shared recommender: empty observations → null price; trades outweigh outlier asks; filters do not invent samples.
-- Shared analytics: null VWAP on zero volume; carbon labelled ESTIMATED; empty sums stay ACTUAL 0.
-- API: unauthenticated 401; empty book INSUFFICIENT; live listing drives advisory ask; analytics zeros; seller supply from remaining kWh; foreign confirmed volume does not leak.
-- Web: `/dashboard` is protected; price query encoding; socket events invalidate analytics/pricing keys.
+- Shared: injection sanitization; empty-book fallback does not invent volume; model JSON parse; advisory flags forced.
+- API: unauthenticated 401; invalid body 422; unconfigured status without secrets; fallback zeros; live listing remaining kWh; stranger cannot read another buyer's bid; unknown listing 404.
+- Web: `/advisor` is protected; request builder omits execute flags.
 
-## Explicitly out of S6
+## Explicitly out of S7
 
-- Optional AI adapters (S7)
-- IoT / EnergyHistory adapters
+- IoT / EnergyHistory adapters (S8)
 - Persisting on-chain listing ids on the Listing row
 - Fabricated marketplace volume or settlement results
 - Treating wallet UI mined receipts as `CONFIRMED`
-- Auto-applying recommended prices to listings
+- Auto-applying recommended or AI prices to listings
+- AI executing trades, wallet actions, or blockchain transactions
 
 ## Known environment notes
 
@@ -66,6 +66,7 @@ S6 test coverage added:
 - Tailwind CSS 3 is used (v4 native oxide crashed SIGBUS in this environment)
 - Shared package must be built (`npm run build -w packages/shared`) before API/web typecheck against `dist`.
 - Settlement tests mock JSON-RPC; they do not call a live chain.
+- AI tests do not call a live LLM. They assert the unconfigured fallback path.
 
 ## Research question
 

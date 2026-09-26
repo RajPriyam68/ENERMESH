@@ -26,6 +26,10 @@ const envSchema = z.object({
   CONTRACT_ADDRESS: z.string().optional().default(""),
   SOCKET_PATH: z.string().default("/socket.io"),
   SOCKET_CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  USER_LLM_API_KEY: z.string().optional().default(""),
+  USER_LLM_BASE_URL: z.string().optional().default(""),
+  USER_LLM_MODEL: z.string().optional().default(""),
+  USER_LLM_PROVIDER: z.string().optional().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;

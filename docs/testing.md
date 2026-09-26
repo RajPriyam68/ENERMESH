@@ -57,7 +57,7 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 ## S5 coverage
 
 - Socket handshake: missing token and invalid token rejected with `UNAUTHENTICATED`
-- Valid access token receives `system:hello` with sprint label (S6 after this sprint)
+- Valid access token receives `system:hello` with sprint label (S7 after this sprint)
 - `listing:created` emitted only after a validated POST; client-originated privileged emits are ignored
 - Notification REST: unauthenticated 401, missing id 404, listing author receives `LISTING_CREATED`
 - Web: socket event → query-key mapping; duplicate `eventId` dropped
@@ -70,9 +70,16 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Analytics API: unauthenticated 401; labelled zeros; seller supply from own remaining kWh; foreign confirmed volume does not leak
 - Web: `/dashboard` protected; price query encoding; socket events invalidate analytics/pricing keys
 
+## S7 coverage
+
+- Shared sanitizer redacts injection phrases; empty-book fallback keeps kWh at 0 and price null
+- Model JSON must match the insight schema; malformed output is discarded
+- AI API: unauthenticated 401; invalid body 422; unconfigured status without secrets; live listing remaining kWh; foreign bid 403; unknown listing 404
+- Web: `/advisor` protected; request builder never adds execute flags
+
 ## Planned (later sprints)
 
-Optional AI adapters; listing on-chain id persistence on the Listing row.
+IoT / EnergyHistory adapters; listing on-chain id persistence on the Listing row.
 
 ## Commands
 

@@ -3,6 +3,7 @@
 import type { ListingPublic } from "@enermesh/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { AdvisorPanel } from "@/components/ai/advisor-panel";
 import { PlaceBidForm } from "@/components/bids/place-bid-form";
 import { PublishListingOnChain } from "@/components/trades/publish-listing-on-chain";
 import { Alert } from "@/components/ui/alert";
@@ -97,6 +98,15 @@ export function ListingDetail({ listingId }: { listingId: string }) {
       <Alert tone="info">
         Quantity shown here is live remaining energy, not a forecast. A bid may match only part of this offer.
       </Alert>
+
+      {user ? (
+        <AdvisorPanel
+          listingId={listing.id}
+          energyType={listing.energyType}
+          marketZone={listing.marketZone}
+          heading="Explain this listing"
+        />
+      ) : null}
 
       {owned ? (
         <div className="space-y-4">

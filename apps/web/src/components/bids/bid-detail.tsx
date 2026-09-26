@@ -3,6 +3,7 @@
 import type { BidPublic, MatchPublic } from "@enermesh/shared";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { AdvisorPanel } from "@/components/ai/advisor-panel";
 import { ReviewTrade } from "@/components/trades/review-trade";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,13 @@ export function BidDetail({ bidId }: { bidId: string }) {
           <dd className="mt-1">{formatWindow(bid.requiredFrom, bid.requiredUntil)}</dd>
         </div>
       </dl>
+
+      <AdvisorPanel
+        bidId={bid.id}
+        energyType={bid.energyType}
+        marketZone={bid.marketZone}
+        heading="Explain this bid"
+      />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Matches</h2>

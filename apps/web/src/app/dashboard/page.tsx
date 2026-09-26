@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AdvisorPanel } from "@/components/ai/advisor-panel";
 import { AnalyticsDashboard } from "@/components/analytics/dashboard";
 import { RequireAuth } from "@/components/auth/require-auth";
 
@@ -14,7 +15,10 @@ export default function DashboardPage() {
       </p>
       <div className="mt-8">
         <RequireAuth>
-          <AnalyticsDashboard />
+          <div className="space-y-8">
+            <AnalyticsDashboard />
+            <AdvisorPanel heading="Explain this dashboard" />
+          </div>
         </RequireAuth>
       </div>
     </div>

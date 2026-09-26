@@ -39,6 +39,9 @@ export function AuthNav() {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/dashboard">Dashboard</Link>
         </Button>
+        <Button variant="ghost" size="sm" asChild>
+          <Link href="/advisor">Advisor</Link>
+        </Button>
         <NotificationBell />
         <Button variant="ghost" size="sm" asChild>
           <Link href="/profile">Profile</Link>

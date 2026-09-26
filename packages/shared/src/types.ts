@@ -181,6 +181,100 @@ export interface AnalyticsSnapshot {
   generatedAt: string;
 }
 
+export const AiTopic = {
+  MARKET: "market",
+  PRICE: "price",
+  LISTING: "listing",
+  BID: "bid",
+  DASHBOARD: "dashboard",
+} as const;
+export type AiTopic = (typeof AiTopic)[keyof typeof AiTopic];
+
+export const AiProviderStatus = {
+  CONFIGURED: "configured",
+  UNAVAILABLE: "unavailable",
+  ERROR: "error",
+} as const;
+export type AiProviderStatus = (typeof AiProviderStatus)[keyof typeof AiProviderStatus];
+
+export interface AiRecommendationFacts {
+  recommendedPrice: number | null;
+  rangeMin: number | null;
+  rangeMax: number | null;
+  confidence: number;
+  dataQuality: DataQuality;
+  reason: string;
+  sampleCounts: { trades: number; asks: number; bids: number };
+}
+
+export interface AiAnalyticsFacts {
+  scope: "self" | "platform";
+  energyTradedKwh: number | null;
+  transactionValue: number | null;
+  averagePricePerKwh: number | null;
+  supplyKwh: number | null;
+  demandKwh: number | null;
+  matchedKwh: number | null;
+  unmatchedKwh: number | null;
+  revenue: number | null;
+  spending: number | null;
+  renewableShare: number | null;
+  estimatedCarbonSavingsKg: number | null;
+  carbonSourceLabel: DataSourceLabel;
+}
+
+export interface AiListingFacts {
+  id: string;
+  energyType: EnergyType;
+  marketZone: string;
+  pricePerKwh: number;
+  availableQuantityKwh: number;
+  soldQuantityKwh: number;
+  status: ListingStatus;
+}
+
+export interface AiBidFacts {
+  id: string;
+  energyType: EnergyType;
+  marketZone: string;
+  maxPricePerKwh: number;
+  unmatchedKwh: number;
+  matchedKwh: number;
+  status: BidStatus;
+}
+
+export interface AiFacts {
+  recommendation: AiRecommendationFacts | null;
+  analytics: AiAnalyticsFacts | null;
+  listing: AiListingFacts | null;
+  bid: AiBidFacts | null;
+}
+
+export interface AiInsight {
+  advisory: true;
+  actionsEnabled: false;
+  sourceLabel: DataSourceLabel;
+  dataQuality: DataQuality;
+  providerStatus: AiProviderStatus;
+  provider: string | null;
+  model: string | null;
+  usedFallback: boolean;
+  summary: string;
+  bullets: string[];
+  caveats: string[];
+  facts: AiFacts;
+  generatedAt: string;
+}
+
+export interface AiStatus {
+  configured: boolean;
+  available: boolean;
+  provider: string | null;
+  model: string | null;
+  advisoryOnly: true;
+  actionsEnabled: false;
+}
+
 export interface HealthPayload {
   status: "ok" | "degraded";
   service: "enermesh-api";

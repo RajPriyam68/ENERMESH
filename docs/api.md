@@ -151,9 +151,18 @@ Query: `energyType`, `marketZone`, `availableFrom`, `availableUntil`. Response `
 
 Query: `from`, `until`, `energyType`, `marketZone`. Energy traded and transaction value count only `CONFIRMED`/`COMPLETED` trades with `blockchainTxStatus=CONFIRMED`. Live supply is remaining kWh on ACTIVE/PARTIALLY_FILLED listings; live demand is unmatched kWh on OPEN/PARTIALLY_MATCHED bids. Carbon savings are `ESTIMATED`. Empty books return actual zeros, not sample data.
 
+### AI (S7)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/ai/status` | access token | Adapter configured/available flags; never returns keys |
+| POST | `/api/v1/ai/insights` | access token | Advisory insight from labelled S6 facts |
+
+Body: `topic` (`market` \| `price` \| `listing` \| `bid` \| `dashboard`), optional `question`, `energyType`, `marketZone`, `listingId`, `bidId`. `listing` requires `listingId`; `bid` requires `bidId` and is owner/ADMIN only. Response includes `insight` (`advisory: true`, `actionsEnabled: false`, `usedFallback`, labelled `facts`) and `status`. Unconfigured or invalid model JSON uses the deterministic S6 fallback. Rate limit: 20 requests / minute / IP on `/ai/insights`.
+
 ## Planned surface (later sprints)
 
-`/reports`, `/ai`, `/iot`.
+`/reports`, `/iot`.
 
 All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.
 
@@ -161,7 +170,7 @@ All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotenc
 
 - HTTP 401 unauthenticated, 403 forbidden, 404 missing, 409 conflict (e.g. oversell), 410 expired challenge,
   422 validation, 429 rate limit, 503 not ready
-- Rate limit: 120 requests / minute / IP globally; 20 requests / minute / IP on `/auth/*`
+- Rate limit: 120 requests / minute / IP globally; 20 requests / minute / IP on `/auth/*` and `/ai/insights`
 - CORS origin from `WEB_ORIGIN`
 - Socket.IO path from `SOCKET_PATH`; the handshake requires a valid access token and clients do not emit
   privileged events
