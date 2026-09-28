@@ -8,12 +8,12 @@ const EVENT_QUERY_KEYS: Record<string, string[][]> = {
   "bid:expired": [["bids"], ["bid"], ["pricing"], ["analytics"]],
   "match:created": [["matches"], ["bids"], ["listings"], ["analytics"]],
   "match:updated": [["matches"], ["analytics"]],
-  "trade:pending": [["matches"], ["trades"], ["analytics"], ["pricing"]],
-  "trade:confirmed": [["matches"], ["trades"], ["analytics"], ["pricing"]],
-  "trade:failed": [["matches"], ["trades"], ["analytics"]],
+  "trade:pending": [["matches"], ["trades"], ["analytics"], ["pricing"], ["reports"]],
+  "trade:confirmed": [["matches"], ["trades"], ["analytics"], ["pricing"], ["reports"]],
+  "trade:failed": [["matches"], ["trades"], ["analytics"], ["reports"]],
   "notification:new": [["notifications"]],
-  "energy:updated": [["iot"]],
-  "dashboard:updated": [["listings"], ["bids"], ["matches"], ["notifications"], ["wallets"], ["analytics"], ["pricing"], ["iot"]],
+  "energy:updated": [["iot"], ["reports"]],
+  "dashboard:updated": [["listings"], ["bids"], ["matches"], ["notifications"], ["wallets"], ["analytics"], ["pricing"], ["iot"], ["reports"]],
 };
 
 export function queryKeysForSocketEvent(event: string): string[][] {

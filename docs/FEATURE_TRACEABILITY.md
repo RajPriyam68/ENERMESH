@@ -23,8 +23,8 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | Price + analytics | S6 | `packages/shared/src/pricing.ts`, `apps/api/src/services/price.service.ts`, `apps/api/src/services/analytics.service.ts`, `apps/web/src/app/dashboard` | Confidence and dataQuality labelled; empty book remains 0 |
 | AI adapters | S7 | `packages/shared/src/ai.ts`, `apps/api/src/services/ai.service.ts`, `apps/web/src/components/ai/advisor-panel.tsx` | Advisory-only; app works without key; empty book stays 0 |
 | IoT adapters | S8 | `packages/shared/src/iot.ts`, `apps/api/src/services/iot.service.ts`, `apps/web/src/app/telemetry` | Simulated vs actual labels; empty history = 0 |
-| Reports / admin / audit | S10 | planned | Audit completeness |
-| Security tests | S11 | planned | Failure rate |
-| Deploy polish | S12 | planned | Demo path green |
+| Reports / admin / audit | S9 | `apps/api/src/routes/admin.ts`, `apps/api/src/routes/reports.ts`, `apps/web/src/app/admin` | Audit completeness from real AuditLog rows; empty reports stay 0 |
+| Security tests | S10 | planned | Failure rate |
+| Deploy polish | S11 | planned | Demo path green |
 
 No row may be marked measured with invented numbers.

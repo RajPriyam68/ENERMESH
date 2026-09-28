@@ -19,6 +19,7 @@ import { listingsRouter } from "./routes/listings.js";
 import { matchesRouter } from "./routes/matches.js";
 import { notificationsRouter } from "./routes/notifications.js";
 import { pricingRouter } from "./routes/pricing.js";
+import { reportsRouter } from "./routes/reports.js";
 import { tradesRouter } from "./routes/trades.js";
 import { walletsRouter } from "./routes/wallets.js";
 
@@ -75,6 +76,7 @@ export function createApp() {
   app.use(`${API_PREFIX}/analytics`, analyticsRouter);
   app.use(`${API_PREFIX}/ai`, aiRouter);
   app.use(`${API_PREFIX}/iot`, iotRouter);
+  app.use(`${API_PREFIX}/reports`, reportsRouter);
   app.use(`${API_PREFIX}/admin`, adminRouter);
   app.use(`${API_PREFIX}/docs`, swaggerUi.serve, swaggerUi.setup(openApiDocument));
 

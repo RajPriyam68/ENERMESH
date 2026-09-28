@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { paginationQuerySchema } from "@enermesh/shared";
-import { prisma } from "../lib/prisma.js";
+import { adminUserPatchSchema, adminUserQuerySchema, auditLogQuerySchema, idParamSchema } from "@enermesh/shared";
 import { ok } from "../lib/response.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { authenticate, authorize } from "../middleware/auth.js";
-import { validate } from "../middleware/validate.js";
+import { getValidatedQuery, validate } from "../middleware/validate.js";
+import { listAdminUsers, listAuditLogs, patchAdminUser } from "../services/admin.service.js";
 
 export const adminRouter = Router();
 
@@ -12,37 +12,49 @@ adminRouter.use(authenticate, authorize("ADMIN"));
 
 adminRouter.get(
   "/users",
-  validate({ query: paginationQuerySchema }),
+  validate({ query: adminUserQuerySchema }),
   asyncHandler(async (req, res) => {
-    const { page, pageSize } = req.validatedQuery as { page: number; pageSize: number };
-    const [total, users] = await Promise.all([
-      prisma.user.count(),
-      prisma.user.findMany({
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-        orderBy: { createdAt: "desc" },
-        select: {
-          id: true,
-          email: true,
-          displayName: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-          lastLoginAt: true,
-        },
-      }),
-    ]);
-
+    const query = getValidatedQuery<ReturnType<typeof adminUserQuerySchema.parse>>(req);
+    const result = await listAdminUsers(query);
     return ok(
       res,
       {
-        users: users.map((user) => ({
-          ...user,
-          createdAt: user.createdAt.toISOString(),
-          lastLoginAt: user.lastLoginAt?.toISOString() ?? null,
-        })),
+        users: result.users,
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
       },
-      { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
+      { page: result.page, pageSize: result.pageSize, total: result.total, totalPages: result.totalPages },
+    );
+  }),
+);
+
+adminRouter.patch(
+  "/users/:id",
+  validate({ params: idParamSchema, body: adminUserPatchSchema }),
+  asyncHandler(async (req, res) => {
+    const user = await patchAdminUser(req.user!, req.params.id as string, req.body, { ipAddress: req.ip });
+    return ok(res, { user });
+  }),
+);
+
+adminRouter.get(
+  "/audit-logs",
+  validate({ query: auditLogQuerySchema }),
+  asyncHandler(async (req, res) => {
+    const query = getValidatedQuery<ReturnType<typeof auditLogQuerySchema.parse>>(req);
+    const result = await listAuditLogs(query);
+    return ok(
+      res,
+      {
+        logs: result.logs,
+        page: result.page,
+        pageSize: result.pageSize,
+        total: result.total,
+        totalPages: result.totalPages,
+      },
+      { page: result.page, pageSize: result.pageSize, total: result.total, totalPages: result.totalPages },
     );
   }),
 );

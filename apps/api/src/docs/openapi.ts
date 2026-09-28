@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 8 adds labelled EnergyHistory ingest (HTTP + simulated adapters). Telemetry never writes listings, bids, matches, or CONFIRMED trades. REST remains the source of truth.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 9 adds ADMIN reports, user administration, and audit-log listing from real Prisma rows. Empty marketplace volume stays labelled 0. REST remains the source of truth.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -591,9 +591,103 @@ export const openApiDocument = {
         parameters: [
           { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
           { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "role", in: "query", schema: { type: "string" } },
+          { name: "isActive", in: "query", schema: { type: "string" } },
+          { name: "q", in: "query", schema: { type: "string" } },
         ],
         responses: {
           "200": envelope("Paginated user list"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Admin role required"),
+        },
+      },
+    },
+    "/admin/users/{id}": {
+      patch: {
+        summary: "Set a user's active status (ADMIN only). Cannot self-deactivate or drop the last admin.",
+        tags: ["Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: jsonBody("isActive boolean"),
+        responses: {
+          "200": envelope("Updated user"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Admin role required"),
+          "404": envelope("User not found"),
+          "409": envelope("Self-update or last-admin conflict"),
+          "422": envelope("Validation failed"),
+        },
+      },
+    },
+    "/admin/audit-logs": {
+      get: {
+        summary: "List audit logs (ADMIN only)",
+        tags: ["Admin"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "page", in: "query", schema: { type: "integer", minimum: 1 } },
+          { name: "pageSize", in: "query", schema: { type: "integer", minimum: 1, maximum: 100 } },
+          { name: "action", in: "query", schema: { type: "string" } },
+          { name: "entityType", in: "query", schema: { type: "string" } },
+          { name: "entityId", in: "query", schema: { type: "string" } },
+          { name: "userId", in: "query", schema: { type: "string", format: "uuid" } },
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "until", in: "query", schema: { type: "string", format: "date-time" } },
+        ],
+        responses: {
+          "200": envelope("Paginated audit logs from real AuditLog rows"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Admin role required"),
+        },
+      },
+    },
+    "/reports/marketplace": {
+      get: {
+        summary: "Platform marketplace report from confirmed trades and live book (ADMIN)",
+        tags: ["Reports"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "until", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "energyType", in: "query", schema: { type: "string" } },
+          { name: "marketZone", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": envelope("Labelled marketplace report; empty book stays at actual 0"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Admin role required"),
+        },
+      },
+    },
+    "/reports/settlement": {
+      get: {
+        summary: "Settlement report from Trade rows (ADMIN)",
+        tags: ["Reports"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "until", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "energyType", in: "query", schema: { type: "string" } },
+          { name: "marketZone", in: "query", schema: { type: "string" } },
+        ],
+        responses: {
+          "200": envelope("Trade and chain-status counts; CONFIRMED volume is labelled ACTUAL"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Admin role required"),
+        },
+      },
+    },
+    "/reports/telemetry": {
+      get: {
+        summary: "EnergyHistory telemetry report (ADMIN). Does not invent marketplace volume.",
+        tags: ["Reports"],
+        security: [{ bearerAuth: [] }],
+        parameters: [
+          { name: "from", in: "query", schema: { type: "string", format: "date-time" } },
+          { name: "until", in: "query", schema: { type: "string", format: "date-time" } },
+        ],
+        responses: {
+          "200": envelope("Labelled EnergyHistory totals; empty history stays at actual 0"),
           "401": envelope("Authentication required"),
           "403": envelope("Admin role required"),
         },

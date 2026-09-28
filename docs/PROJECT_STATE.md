@@ -1,8 +1,8 @@
 # EnerMesh project state
 
-Last updated: 2026-09-26
-Current sprint: **S8 IoT adapters / EnergyHistory** — COMPLETE
-Next sprint: S9 Reports, admin, audit logs. Hybrid on-chain listing ids remain later polish.
+Last updated: 2026-09-28
+Current sprint: **S9 Reports, admin, audit logs** — COMPLETE
+Next sprint: S10 Security, testing, performance. Hybrid on-chain listing ids remain later polish.
 
 ## Protocol
 
@@ -21,21 +21,21 @@ Before each sprint: read this file, inspect the repo, implement **only** the cur
 | S6 | Advisory price recommendation, labelled analytics dashboards | COMPLETE |
 | S7 | Provider-independent AI adapters (optional) | COMPLETE |
 | S8 | IoT adapters, EnergyHistory, simulated-data labels | COMPLETE |
-| S9 | Reports, admin, audit logs | NOT STARTED |
+| S9 | Reports, admin, audit logs | COMPLETE |
 | S10 | Security, testing, performance | NOT STARTED |
 | S11 | Docker/CI polish, production scripts, demo path | NOT STARTED |
 | S12 | Hybrid DB sync / on-chain listing id persistence (deferred polish) | NOT STARTED |
 
-## What exists after S8
+## What exists after S9
 
-Building on S7:
+Building on S8:
 
-- **EnergyHistory** — authenticated ingest writes labelled kWh samples (`ACTUAL | ESTIMATED | SIMULATED`) onto the existing Prisma model. Empty history stays at actual 0. Samples never create listings, bids, matches, or `CONFIRMED` trades.
-- **Adapters** — HTTP ingest (`POST /iot/readings`) and a simulated adapter (`POST /iot/simulate`) that always stamps `sourceLabel=SIMULATED`. MQTT env vars (`MQTT_URL`, `MQTT_USERNAME`, `MQTT_PASSWORD`) are accepted; the status payload reports `mqttAvailable: false` and does not connect a broker.
-- **API** — `GET /iot/status`, `GET /iot/history`, `POST /iot/readings`, `POST /iot/simulate`. Owner-scoped reads; ADMIN may pass `userId`. Foreign history is 403. Rate limit 40/min on ingest/simulate. Audit uses existing `ADMIN_ACTION` with entityType `EnergyHistory`.
-- **Web** — `/telemetry` with loading, empty, and error states. Simulated kWh is shown separately from actual kWh. Socket event `energy:updated` invalidates IoT queries.
+- **Reports** — ADMIN-only `GET /reports/marketplace`, `/reports/settlement`, `/reports/telemetry`. Marketplace and settlement reuse labelled S6 analytics (confirmed trades only). Telemetry sums EnergyHistory without writing listings, bids, matches, or `CONFIRMED` trades. Empty books stay at actual 0.
+- **Admin users** — `GET /admin/users` filters by role, active flag, and search. `PATCH /admin/users/:id` sets `isActive` only. Self-deactivation is 409. The last active ADMIN cannot be disabled. Disable revokes refresh sessions. Role is never assigned through `/register`.
+- **Audit logs** — `GET /admin/audit-logs` lists real `AuditLog` rows with action, entity, actor, IP, and metadata. Admin disable writes `ADMIN_ACTION` with `operation=set_active`.
+- **Web** — `/admin`, `/admin/audit`, `/admin/reports` are ADMIN-gated with loading, empty, and error states. Nav links appear only for ADMIN.
 
-## Validation (S8)
+## Validation (S9)
 
 - `npm run typecheck`
 - `npm run lint`
@@ -43,20 +43,20 @@ Building on S7:
 - `npm run build`
 - `npx hardhat test` in `packages/contracts`
 
-S8 test coverage added:
+S9 test coverage added:
 
-- Shared: empty summary stays 0; simulated drafts are SIMULATED; ingest schema rejects unknown listing fields and negative kWh.
-- API: unauthenticated 401; invalid body 422; empty history zeros; ACTUAL ingest does not change listing count or confirmed volume; stranger cannot read another user's samples (403).
-- Web: `/telemetry` is protected; query encoding; `energy:updated` maps to `iot` query keys.
+- Shared: empty telemetry stays 0; admin patch rejects role assignment; inverted report windows fail validation.
+- API: unauthenticated 401; buyer/seller 403; labelled zeros; audit rows after register; disable seller + self-deactivation 409; EnergyHistory does not change confirmed volume.
+- Web: `/admin` paths protected; query encoding; `energy:updated` and `trade:confirmed` invalidate `reports` keys.
 
-## Explicitly out of S8
+## Explicitly out of S9
 
-- Reports / admin / audit log UI (S9)
+- Security/performance hardening sprint (S10)
 - Persisting on-chain listing ids on the Listing row
 - Fabricated marketplace volume or settlement results
 - Treating wallet UI mined receipts as `CONFIRMED`
 - MQTT broker connection or live meter polling
-- Auto-creating listings from telemetry
+- Promoting users to ADMIN through the public API
 
 ## Known environment notes
 

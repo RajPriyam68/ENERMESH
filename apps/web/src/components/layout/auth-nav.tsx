@@ -45,6 +45,19 @@ export function AuthNav() {
         <Button variant="ghost" size="sm" asChild>
           <Link href="/telemetry">Telemetry</Link>
         </Button>
+        {user.role === "ADMIN" ? (
+          <>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin">Users</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin/audit">Audit</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
+              <Link href="/admin/reports">Reports</Link>
+            </Button>
+          </>
+        ) : null}
         <NotificationBell />
         <Button variant="ghost" size="sm" asChild>
           <Link href="/profile">Profile</Link>

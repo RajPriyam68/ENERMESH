@@ -22,6 +22,7 @@ EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**
   7. Price recommendation and analytics (S6) read confirmed trades plus live remaining supply/demand. They never invent volume or auto-set listing prices.
   8. Optional AI (S7) explains those labelled facts. It cannot execute trades, sign wallets, or mark a trade `CONFIRMED`. Missing keys use a deterministic fallback.
   9. IoT (S8) stores labelled EnergyHistory samples. Simulated adapters cannot invent marketplace volume.
+  10. Reports, admin users, and audit logs (S9) read Prisma rows. ADMIN-only. Empty marketplace volume stays labelled 0.
 
 ## Trust boundaries
 

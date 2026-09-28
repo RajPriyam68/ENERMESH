@@ -29,6 +29,7 @@ export const PROTECTED_PATHS = [
   "/dashboard",
   "/advisor",
   "/telemetry",
+  "/admin",
 ] as const;
 
 export function isProtectedPath(pathname: string): boolean {

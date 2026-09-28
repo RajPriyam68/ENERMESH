@@ -57,7 +57,7 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 ## S5 coverage
 
 - Socket handshake: missing token and invalid token rejected with `UNAUTHENTICATED`
-- Valid access token receives `system:hello` with sprint label (S8 after this sprint)
+- Valid access token receives `system:hello` with sprint label (S9 after this sprint)
 - `listing:created` emitted only after a validated POST; client-originated privileged emits are ignored
 - Notification REST: unauthenticated 401, missing id 404, listing author receives `LISTING_CREATED`
 - Web: socket event → query-key mapping; duplicate `eventId` dropped
@@ -82,6 +82,12 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Shared: empty EnergyHistory summary stays 0; simulated drafts are labelled SIMULATED; ingest schema rejects unknown listing fields and negative kWh
 - API: unauthenticated 401; invalid body 422; empty history zeros; ACTUAL ingest does not change listings or confirmed volume; foreign history 403
 - Web: `/telemetry` protected; history query encoding; `energy:updated` invalidates `iot` keys
+
+## S9 coverage
+
+- Shared: empty telemetry stays ACTUAL 0; admin patch rejects role assignment; inverted report windows fail validation
+- API: unauthenticated 401; buyer/seller 403; labelled zeros; audit rows after register; disable seller; self-deactivation 409; EnergyHistory does not change confirmed volume
+- Web: `/admin`, `/admin/audit`, `/admin/reports` protected; query encoding; `energy:updated` and `trade:confirmed` invalidate `reports` keys
 
 ## Planned (later sprints)
 

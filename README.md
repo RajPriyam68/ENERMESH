@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S8 — IoT adapters and labelled EnergyHistory** is complete. Simulated samples stay SIMULATED and never invent marketplace volume. Next is reports/admin (S9). See `docs/PROJECT_STATE.md`.
+**S9 — Reports, admin, and audit logs** is complete. ADMIN-only reports use real Prisma rows; empty marketplace volume stays labelled 0. Next is security/testing (S10). See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 

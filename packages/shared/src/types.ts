@@ -1,4 +1,5 @@
 import type {
+  AuditAction,
   BidStatus,
   BlockchainTxStatus,
   DataQuality,
@@ -376,4 +377,67 @@ export interface SystemHelloPayload {
   sprint: string;
   userId: string;
   message: string;
+}
+
+export interface AdminUserPublic {
+  id: string;
+  email: string;
+  displayName: string;
+  role: UserRole;
+  isActive: boolean;
+  createdAt: string;
+  lastLoginAt: string | null;
+}
+
+export interface AuditLogPublic {
+  id: string;
+  userId: string | null;
+  userEmail: string | null;
+  userDisplayName: string | null;
+  action: AuditAction;
+  entityType: string;
+  entityId: string | null;
+  ipAddress: string | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export const ReportKind = {
+  MARKETPLACE: "marketplace",
+  SETTLEMENT: "settlement",
+  TELEMETRY: "telemetry",
+} as const;
+export type ReportKind = (typeof ReportKind)[keyof typeof ReportKind];
+
+export interface ReportCounts {
+  users: number;
+  listings: number;
+  bids: number;
+  matches: number;
+  confirmedTrades: number;
+  energyHistorySamples: number;
+  auditLogs: number;
+}
+
+export interface MarketplaceReport {
+  kind: typeof ReportKind.MARKETPLACE;
+  analytics: AnalyticsSnapshot;
+  counts: Pick<ReportCounts, "listings" | "bids" | "matches" | "confirmedTrades">;
+  generatedAt: string;
+}
+
+export interface SettlementReport {
+  kind: typeof ReportKind.SETTLEMENT;
+  analytics: AnalyticsSnapshot;
+  tradeStatusCounts: Record<TradeStatus, number>;
+  blockchainTxStatusCounts: Record<BlockchainTxStatus, number>;
+  generatedAt: string;
+}
+
+export interface TelemetryReport {
+  kind: typeof ReportKind.TELEMETRY;
+  sampleCount: number;
+  totalKwh: LabelledMetric;
+  bySourceLabel: Record<DataSourceLabel, { sampleCount: number; totalKwh: number }>;
+  generatedAt: string;
 }

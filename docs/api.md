@@ -51,11 +51,13 @@ Errors:
 | POST | `/api/v1/wallets/verify` | access token | Verify a signature and link the address |
 | DELETE | `/api/v1/wallets/:address` | access token | Unlink a wallet |
 
-### Admin (S1)
+### Admin (S1, S9)
 
 | Method | Path | Auth | Description |
 | --- | --- | --- | --- |
-| GET | `/api/v1/admin/users` | ADMIN | Paginated user list |
+| GET | `/api/v1/admin/users` | ADMIN | Paginated user list; filter `role`, `isActive`, `q` |
+| PATCH | `/api/v1/admin/users/:id` | ADMIN | Set `isActive` only; self-deactivation and last-admin disable return 409 |
+| GET | `/api/v1/admin/audit-logs` | ADMIN | Paginated audit logs; filter action, entity, user, window |
 
 ## Session model
 
@@ -160,6 +162,16 @@ Query: `from`, `until`, `energyType`, `marketZone`. Energy traded and transactio
 
 Body: `topic` (`market` \| `price` \| `listing` \| `bid` \| `dashboard`), optional `question`, `energyType`, `marketZone`, `listingId`, `bidId`. `listing` requires `listingId`; `bid` requires `bidId` and is owner/ADMIN only. Response includes `insight` (`advisory: true`, `actionsEnabled: false`, `usedFallback`, labelled `facts`) and `status`. Unconfigured or invalid model JSON uses the deterministic S6 fallback. Rate limit: 20 requests / minute / IP on `/ai/insights`.
 
+### Reports (S9)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| GET | `/api/v1/reports/marketplace` | ADMIN | Labelled platform analytics plus listing/bid/match/confirmed-trade counts |
+| GET | `/api/v1/reports/settlement` | ADMIN | Confirmed volume plus Trade status and chain-status counts |
+| GET | `/api/v1/reports/telemetry` | ADMIN | EnergyHistory sample totals by source label |
+
+Query for marketplace/settlement: `from`, `until`, `energyType`, `marketZone`. Telemetry uses `from`/`until` on `recordedAt`. Energy traded counts only `CONFIRMED`/`COMPLETED` trades with `blockchainTxStatus=CONFIRMED`. Empty books return actual zeros. Telemetry never writes marketplace rows.
+
 ### IoT / EnergyHistory (S8)
 
 | Method | Path | Auth | Description |
@@ -173,7 +185,7 @@ Body for ingest: `kwh`, optional `recordedAt`, `deviceId`, `sourceLabel` (`ACTUA
 
 ## Planned surface (later sprints)
 
-`/reports`.
+On-chain listing id persistence (S12).
 
 All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.
 
