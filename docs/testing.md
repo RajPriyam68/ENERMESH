@@ -57,7 +57,7 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 ## S5 coverage
 
 - Socket handshake: missing token and invalid token rejected with `UNAUTHENTICATED`
-- Valid access token receives `system:hello` with sprint label (S9 after this sprint)
+- Valid access token receives `system:hello` with sprint label (S10 after this sprint)
 - `listing:created` emitted only after a validated POST; client-originated privileged emits are ignored
 - Notification REST: unauthenticated 401, missing id 404, listing author receives `LISTING_CREATED`
 - Web: socket event → query-key mapping; duplicate `eventId` dropped
@@ -88,6 +88,13 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Shared: empty telemetry stays ACTUAL 0; admin patch rejects role assignment; inverted report windows fail validation
 - API: unauthenticated 401; buyer/seller 403; labelled zeros; audit rows after register; disable seller; self-deactivation 409; EnergyHistory does not change confirmed volume
 - Web: `/admin`, `/admin/audit`, `/admin/reports` protected; query encoding; `energy:updated` and `trade:confirmed` invalidate `reports` keys
+
+## S10 coverage
+
+- Shared: wallet address param schema rejects garbage unlink paths
+- API: Helmet nosniff/frame-deny/no-referrer; unlisted CORS origin not reflected; invalid JSON 400; unexpected errors stay generic; limiter 429 with skip disabled; production secret rejection; ADMIN register 422; last-admin 409; disabled admin 403; malformed wallet unlink 422; refresh cookie HttpOnly/SameSite/Path
+- Web: extra open-redirect sanitization case
+- Rate limiters skip when `NODE_ENV=test` so S0–S9 HTTP tests stay deterministic; limiter behaviour is asserted separately
 
 ## Planned (later sprints)
 

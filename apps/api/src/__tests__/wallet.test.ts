@@ -141,6 +141,13 @@ describe("wallet verification", { skip: !dbReady }, () => {
     assert.equal(res.status, 422);
   });
 
+  it("rejects unlinking a malformed wallet address with 422", async () => {
+    const token = await authToken();
+    const res = await api(server.baseUrl, "/wallets/not-an-address", { method: "DELETE", token });
+    assert.equal(res.status, 422);
+    assert.equal(res.body.error?.code, "VALIDATION_ERROR");
+  });
+
   it("unlinks a wallet", async () => {
     const token = await authToken();
     const wallet = Wallet.createRandom();

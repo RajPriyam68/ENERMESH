@@ -30,6 +30,8 @@ Provider: PostgreSQL 16 via Prisma. Connection string: `DATABASE_URL` (any compa
 
 Status+zone+type on listings and bids; time windows; price; user foreign keys; audit action+time.
 
+S10 adds `AuditLog_createdAt_idx`. Unfiltered `GET /admin/audit-logs ORDER BY createdAt DESC LIMIT 20` was a sequential top-N heapsort on 3394 live rows (EXPLAIN ANALYZE ~4.7ms) and became an index scan (~1.1ms) after the index. The existing `AuditLog_action_createdAt_idx` already covered filtered action queries (~0.15ms). EnergyHistory and telemetry reports aggregate with `groupBy` instead of loading every sample.
+
 ## Migrations
 
 S1 ships the initial versioned migration `prisma/migrations/20260916000000_s1_auth` (full schema), already

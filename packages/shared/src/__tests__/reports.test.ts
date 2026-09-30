@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { DataSourceLabel } from "../enums.js";
 import { emptyTelemetryKwh, telemetryKwhFromSamples } from "../reports.js";
+import { walletAddressParamSchema } from "../schemas/auth.js";
 import { adminUserPatchSchema, adminUserQuerySchema, auditLogQuerySchema } from "../schemas/admin.js";
 import { reportQuerySchema } from "../schemas/report.js";
 
@@ -54,5 +55,16 @@ describe("report query schema", () => {
         until: "2026-09-01T00:00:00.000Z",
       }),
     );
+  });
+});
+
+describe("wallet address params", () => {
+  it("accepts checksummed EVM addresses and rejects garbage", () => {
+    const parsed = walletAddressParamSchema.parse({
+      address: "0x1234567890abcdef1234567890abcdef12345678",
+    });
+    assert.equal(parsed.address, "0x1234567890abcdef1234567890abcdef12345678");
+    assert.throws(() => walletAddressParamSchema.parse({ address: "not-an-address" }));
+    assert.throws(() => walletAddressParamSchema.parse({ address: "0x1234" }));
   });
 });

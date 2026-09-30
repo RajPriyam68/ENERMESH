@@ -35,5 +35,9 @@ export const walletVerifySchema = z.object({
   nonce: z.string().min(8),
 });
 
+export const walletAddressParamSchema = z.object({
+  address: walletAddressSchema,
+});
+
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;

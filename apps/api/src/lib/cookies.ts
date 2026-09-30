@@ -21,21 +21,22 @@ export function readRefreshCookie(req: Request): string | undefined {
   return parseCookieHeader(req.headers.cookie)[REFRESH_COOKIE_NAME];
 }
 
-export function setRefreshCookie(res: Response, token: string, expiresAt: Date): void {
-  res.cookie(REFRESH_COOKIE_NAME, token, {
+function cookieFlags() {
+  return {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: REFRESH_COOKIE_PATH,
+  };
+}
+
+export function setRefreshCookie(res: Response, token: string, expiresAt: Date): void {
+  res.cookie(REFRESH_COOKIE_NAME, token, {
+    ...cookieFlags(),
     expires: expiresAt,
   });
 }
 
 export function clearRefreshCookie(res: Response): void {
-  res.clearCookie(REFRESH_COOKIE_NAME, {
-    httpOnly: true,
-    secure: env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: REFRESH_COOKIE_PATH,
-  });
+  res.clearCookie(REFRESH_COOKIE_NAME, cookieFlags());
 }

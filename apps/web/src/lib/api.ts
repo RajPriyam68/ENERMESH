@@ -52,7 +52,12 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   }
 
   const text = await res.text();
-  const envelope = (text ? JSON.parse(text) : { success: false }) as Envelope<T>;
+  let envelope: Envelope<T>;
+  try {
+    envelope = (text ? JSON.parse(text) : { success: false }) as Envelope<T>;
+  } catch {
+    throw new ApiError(res.status, "INVALID_RESPONSE", "The API returned a response that could not be parsed.");
+  }
 
   if (!res.ok || !envelope.success) {
     const error = new ApiError(

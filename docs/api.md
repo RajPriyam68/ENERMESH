@@ -183,6 +183,10 @@ Query for marketplace/settlement: `from`, `until`, `energyType`, `marketZone`. T
 
 Body for ingest: `kwh`, optional `recordedAt`, `deviceId`, `sourceLabel` (`ACTUAL` default), `energyType`. Simulate: `kwh`, optional `samples` (1–24), `intervalMinutes`, `deviceId`, `energyType`. History query: `from`, `until`, `sourceLabel`, `deviceId`, pagination. Empty history returns actual zeros. Telemetry never writes listings, bids, matches, or trades. Rate limit: 40 requests / minute / IP on `/iot/readings` and `/iot/simulate`.
 
+### Security (S10)
+
+Helmet sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy: no-referrer`. CORS reflects only `WEB_ORIGIN`. Invalid JSON is `400 INVALID_JSON`. Unexpected errors always return a generic `INTERNAL_ERROR` message. Production refuses default/short/identical JWT secrets and wildcard `WEB_ORIGIN`. Wallet unlink addresses are Zod-validated (`422` on garbage).
+
 ## Planned surface (later sprints)
 
 On-chain listing id persistence (S12).
@@ -193,7 +197,7 @@ All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotenc
 
 - HTTP 401 unauthenticated, 403 forbidden, 404 missing, 409 conflict (e.g. oversell), 410 expired challenge,
   422 validation, 429 rate limit, 503 not ready
-- Rate limit: 120 requests / minute / IP globally; 20 requests / minute / IP on `/auth/*` and `/ai/insights`; 40 requests / minute / IP on `/iot/readings` and `/iot/simulate`
+- Rate limit: 120 requests / minute / IP globally; 20 / minute on `/auth/*`, `/wallets/nonce`, `/wallets/verify`, and `/ai/insights`; 40 / minute on `/admin/*`, `/reports/*`, `/iot/readings`, and `/iot/simulate`. Limiters skip when `NODE_ENV=test`.
 - CORS origin from `WEB_ORIGIN`
 - Socket.IO path from `SOCKET_PATH`; the handshake requires a valid access token and clients do not emit
   privileged events

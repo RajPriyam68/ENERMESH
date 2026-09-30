@@ -32,17 +32,21 @@ function isZodError(err: unknown): err is ZodError {
   );
 }
 
+function isJsonParseError(err: unknown): boolean {
+  if (!(err instanceof SyntaxError)) return false;
+  return "body" in err || "status" in err || "type" in err;
+}
+
 export function errorHandler(err: unknown, _req: Request, res: Response, next: NextFunction) {
   void next;
   if (isZodError(err)) {
     return fail(res, "VALIDATION_ERROR", "Request validation failed", 422, err.flatten());
   }
+  if (isJsonParseError(err)) {
+    return fail(res, "INVALID_JSON", "Request body must be valid JSON", 400);
+  }
   if (err instanceof HttpError) {
     return fail(res, err.code, err.message, err.status, err.details);
-  }
-  const message = err instanceof Error ? err.message : "Unexpected error";
-  if (process.env.NODE_ENV !== "production") {
-    return fail(res, "INTERNAL_ERROR", message, 500);
   }
   return fail(res, "INTERNAL_ERROR", "An unexpected error occurred", 500);
 }

@@ -23,6 +23,7 @@ EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**
   8. Optional AI (S7) explains those labelled facts. It cannot execute trades, sign wallets, or mark a trade `CONFIRMED`. Missing keys use a deterministic fallback.
   9. IoT (S8) stores labelled EnergyHistory samples. Simulated adapters cannot invent marketplace volume.
   10. Reports, admin users, and audit logs (S9) read Prisma rows. ADMIN-only. Empty marketplace volume stays labelled 0.
+  11. Security hardening (S10) covers headers, CORS, cookies, rate limits, Zod params, production secrets, and generic 500s. REST remains the source of truth.
 
 ## Trust boundaries
 

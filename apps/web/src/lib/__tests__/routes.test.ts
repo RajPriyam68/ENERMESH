@@ -20,6 +20,7 @@ describe("sanitizeNextPath", () => {
     assert.equal(sanitizeNextPath("/\\evil.example"), "/marketplace");
     assert.equal(sanitizeNextPath("/ok\\..\\.."), "/marketplace");
     assert.equal(sanitizeNextPath("/line\nbreak"), "/marketplace");
+    assert.equal(sanitizeNextPath("https://evil.example/?next=/admin"), "/marketplace");
   });
 });
 

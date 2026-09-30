@@ -110,7 +110,12 @@ describe("auth integration", { skip: !dbReady }, () => {
     const serialized = JSON.stringify(res.body);
     assert.equal(serialized.includes("passwordHash"), false);
     assert.equal(serialized.includes("$2"), false);
-    assert.ok(res.setCookie.some((cookie) => cookie.startsWith("enermesh_refresh=")));
+    const refreshCookie = res.setCookie.find((cookie) => cookie.startsWith("enermesh_refresh="));
+    assert.ok(refreshCookie);
+    assert.match(refreshCookie, /HttpOnly/i);
+    assert.match(refreshCookie, /Path=\/api\/v1\/auth/i);
+    assert.match(refreshCookie, /SameSite=Lax/i);
+    assert.equal(/Secure/i.test(refreshCookie), false);
   });
 
   it("rejects duplicate emails with 409", async () => {

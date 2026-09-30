@@ -138,10 +138,15 @@ export async function getTelemetryReport(_actor: { id: string; role: "ADMIN" }, 
         }
       : {}),
   };
-  const samples = await prisma.energyHistory.findMany({
-    where,
-    select: { kwh: true, sourceLabel: true },
-  });
+  const [grouped, sampleCount] = await Promise.all([
+    prisma.energyHistory.groupBy({
+      by: ["sourceLabel"],
+      where,
+      _sum: { kwh: true },
+      _count: { _all: true },
+    }),
+    prisma.energyHistory.count({ where }),
+  ]);
 
   const bySourceLabel: TelemetryReport["bySourceLabel"] = {
     [DataSourceLabel.ACTUAL]: { sampleCount: 0, totalKwh: 0 },
@@ -149,21 +154,22 @@ export async function getTelemetryReport(_actor: { id: string; role: "ADMIN" }, 
     [DataSourceLabel.SIMULATED]: { sampleCount: 0, totalKwh: 0 },
   };
   let totalKwh = 0;
-  for (const sample of samples) {
-    const kwh = decimalNumber(sample.kwh);
+  for (const row of grouped) {
+    const kwh = decimalNumber(row._sum.kwh ?? 0);
     totalKwh += kwh;
-    const bucket = bySourceLabel[sample.sourceLabel];
-    bucket.sampleCount += 1;
-    bucket.totalKwh += kwh;
+    bySourceLabel[row.sourceLabel] = {
+      sampleCount: row._count._all,
+      totalKwh: kwh,
+    };
   }
 
   return {
     kind: "telemetry",
-    sampleCount: samples.length,
+    sampleCount,
     totalKwh:
-      samples.length === 0
+      sampleCount === 0
         ? emptyTelemetryKwh("No EnergyHistory samples in this window. Empty telemetry stays at actual 0.")
-        : telemetryKwhFromSamples(totalKwh, samples.length),
+        : telemetryKwhFromSamples(totalKwh, sampleCount),
     bySourceLabel,
     generatedAt: new Date().toISOString(),
   };

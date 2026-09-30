@@ -1,11 +1,11 @@
 import cors from "cors";
 import express from "express";
-import rateLimit from "express-rate-limit";
 import helmet from "helmet";
 import swaggerUi from "swagger-ui-express";
 import { API_PREFIX } from "@enermesh/shared";
 import { env, trustProxySetting } from "./config/env.js";
 import { openApiDocument } from "./docs/openapi.js";
+import { createLimiter } from "./lib/rateLimit.js";
 import { errorHandler, notFound } from "./middleware/errorHandler.js";
 import { adminRouter } from "./routes/admin.js";
 import { aiRouter } from "./routes/ai.js";
@@ -31,23 +31,37 @@ export function createApp() {
   app.use(
     helmet({
       contentSecurityPolicy: false,
+      crossOriginEmbedderPolicy: false,
       crossOriginResourcePolicy: { policy: "cross-origin" },
+      referrerPolicy: { policy: "no-referrer" },
+      frameguard: { action: "deny" },
     }),
   );
+  const allowedOrigins = env.WEB_ORIGIN.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
   app.use(
     cors({
-      origin: env.WEB_ORIGIN.split(",").map((s) => s.trim()),
+      origin: (origin, callback) => {
+        if (!origin) {
+          callback(null, true);
+          return;
+        }
+        if (allowedOrigins.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+        callback(null, false);
+      },
       credentials: true,
     }),
   );
   app.use(express.json({ limit: "1mb" }));
   app.use(
-    rateLimit({
+    createLimiter({
       windowMs: 60_000,
       limit: 120,
-      standardHeaders: true,
-      legacyHeaders: false,
-      skip: () => env.NODE_ENV === "test",
+      message: "Too many requests. Try again shortly.",
     }),
   );
 

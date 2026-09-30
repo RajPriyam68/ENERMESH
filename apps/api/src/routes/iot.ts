@@ -1,7 +1,6 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
 import { energyHistoryQuerySchema, ingestEnergyReadingSchema, simulateEnergyReadingsSchema } from "@enermesh/shared";
-import { env } from "../config/env.js";
+import { createLimiter } from "../lib/rateLimit.js";
 import { ok } from "../lib/response.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { authenticate, authorize } from "../middleware/auth.js";
@@ -15,16 +14,10 @@ import {
 
 export const iotRouter = Router();
 
-const iotLimiter = rateLimit({
+const iotLimiter = createLimiter({
   windowMs: 60_000,
   limit: 40,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: () => env.NODE_ENV === "test",
-  message: {
-    success: false,
-    error: { code: "RATE_LIMITED", message: "Too many telemetry requests. Try again shortly." },
-  },
+  message: "Too many telemetry requests. Try again shortly.",
 });
 
 iotRouter.use(authenticate);

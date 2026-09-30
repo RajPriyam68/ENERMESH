@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type {
   AdminUserPatch,
   AdminUserPublic,
@@ -33,6 +33,23 @@ function toAdminUser(user: {
 function jsonRecord(value: Prisma.JsonValue | null): Record<string, unknown> | null {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
   return value as Record<string, unknown>;
+}
+
+function isSerializationFailure(error: unknown): boolean {
+  return typeof error === "object" && error !== null && (error as { code?: string }).code === "P2034";
+}
+
+async function runSerializable<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error;
+      if (!isSerializationFailure(error) || attempt === attempts - 1) throw error;
+    }
+  }
+  throw lastError;
 }
 
 export async function listAdminUsers(query: AdminUserQuery): Promise<{
@@ -92,45 +109,50 @@ export async function patchAdminUser(
     throw new HttpError(409, "SELF_UPDATE_FORBIDDEN", "Administrators cannot change their own active status");
   }
 
-  const target = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, role: true, isActive: true },
-  });
-  if (!target) {
-    throw new HttpError(404, "USER_NOT_FOUND", "User not found");
-  }
+  const updated = await runSerializable(async () =>
+    prisma.$transaction(
+      async (tx) => {
+        const target = await tx.user.findUnique({
+          where: { id: userId },
+          select: { id: true, role: true, isActive: true },
+        });
+        if (!target) {
+          throw new HttpError(404, "USER_NOT_FOUND", "User not found");
+        }
 
-  if (target.role === "ADMIN" && input.isActive === false) {
-    const otherAdmins = await prisma.user.count({
-      where: { role: "ADMIN", isActive: true, id: { not: userId } },
-    });
-    if (otherAdmins === 0) {
-      throw new HttpError(409, "LAST_ADMIN", "Cannot deactivate the last active administrator");
-    }
-  }
+        if (target.role === "ADMIN" && input.isActive === false) {
+          const otherAdmins = await tx.user.count({
+            where: { role: "ADMIN", isActive: true, id: { not: userId } },
+          });
+          if (otherAdmins === 0) {
+            throw new HttpError(409, "LAST_ADMIN", "Cannot deactivate the last active administrator");
+          }
+        }
 
-  const updated = await prisma.$transaction(async (tx) => {
-    const user = await tx.user.update({
-      where: { id: userId },
-      data: { isActive: input.isActive },
-      select: {
-        id: true,
-        email: true,
-        displayName: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        lastLoginAt: true,
+        const user = await tx.user.update({
+          where: { id: userId },
+          data: { isActive: input.isActive },
+          select: {
+            id: true,
+            email: true,
+            displayName: true,
+            role: true,
+            isActive: true,
+            createdAt: true,
+            lastLoginAt: true,
+          },
+        });
+        if (input.isActive === false) {
+          await tx.refreshToken.updateMany({
+            where: { userId, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
+        }
+        return user;
       },
-    });
-    if (input.isActive === false) {
-      await tx.refreshToken.updateMany({
-        where: { userId, revokedAt: null },
-        data: { revokedAt: new Date() },
-      });
-    }
-    return user;
-  });
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    ),
+  );
 
   await recordAudit({
     userId: actor.id,

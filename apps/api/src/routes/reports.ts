@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { reportQuerySchema } from "@enermesh/shared";
+import { createLimiter } from "../lib/rateLimit.js";
 import { ok } from "../lib/response.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { authenticate, authorize } from "../middleware/auth.js";
@@ -8,7 +9,13 @@ import { getMarketplaceReport, getSettlementReport, getTelemetryReport } from ".
 
 export const reportsRouter = Router();
 
-reportsRouter.use(authenticate, authorize("ADMIN"));
+const reportLimiter = createLimiter({
+  windowMs: 60_000,
+  limit: 40,
+  message: "Too many report requests. Try again shortly.",
+});
+
+reportsRouter.use(authenticate, authorize("ADMIN"), reportLimiter);
 
 reportsRouter.get(
   "/marketplace",

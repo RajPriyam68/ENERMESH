@@ -42,10 +42,31 @@ export function loadEnv(): Env {
   if (!parsed.success) {
     throw new Error(`Invalid environment: ${parsed.error.message}`);
   }
+  assertProductionSecrets(parsed.data);
   if (!process.env.DATABASE_URL) {
     process.env.DATABASE_URL = parsed.data.DATABASE_URL;
   }
   return parsed.data;
+}
+
+const DEV_ACCESS_SECRET = "dev-access-secret-change-me-32";
+const DEV_REFRESH_SECRET = "dev-refresh-secret-change-me-32";
+
+export function assertProductionSecrets(data: Env): void {
+  if (data.NODE_ENV !== "production") return;
+  if (data.JWT_ACCESS_SECRET === DEV_ACCESS_SECRET || data.JWT_ACCESS_SECRET.length < 32) {
+    throw new Error("JWT_ACCESS_SECRET must be a unique value of at least 32 characters in production");
+  }
+  if (data.JWT_REFRESH_SECRET === DEV_REFRESH_SECRET || data.JWT_REFRESH_SECRET.length < 32) {
+    throw new Error("JWT_REFRESH_SECRET must be a unique value of at least 32 characters in production");
+  }
+  if (data.JWT_ACCESS_SECRET === data.JWT_REFRESH_SECRET) {
+    throw new Error("JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must differ in production");
+  }
+  const origins = data.WEB_ORIGIN.split(",").map((s) => s.trim());
+  if (origins.length === 0 || origins.some((origin) => origin === "" || origin === "*")) {
+    throw new Error("WEB_ORIGIN must be an explicit origin list in production");
+  }
 }
 
 /** Parses TRUST_PROXY without silently trusting an unparsable value. */

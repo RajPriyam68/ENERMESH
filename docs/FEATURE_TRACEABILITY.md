@@ -24,7 +24,7 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | AI adapters | S7 | `packages/shared/src/ai.ts`, `apps/api/src/services/ai.service.ts`, `apps/web/src/components/ai/advisor-panel.tsx` | Advisory-only; app works without key; empty book stays 0 |
 | IoT adapters | S8 | `packages/shared/src/iot.ts`, `apps/api/src/services/iot.service.ts`, `apps/web/src/app/telemetry` | Simulated vs actual labels; empty history = 0 |
 | Reports / admin / audit | S9 | `apps/api/src/routes/admin.ts`, `apps/api/src/routes/reports.ts`, `apps/web/src/app/admin` | Audit completeness from real AuditLog rows; empty reports stay 0 |
-| Security tests | S10 | planned | Failure rate |
+| Security tests | S10 | `apps/api/src/__tests__/security.test.ts`, `apps/api/src/app.ts`, `apps/api/src/lib/rateLimit.ts` | Cross-origin reflection = 0; last-admin disable 409; limiter 429; generic 500 |
 | Deploy polish | S11 | planned | Demo path green |
 
 No row may be marked measured with invented numbers.

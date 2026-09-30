@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { adminUserPatchSchema, adminUserQuerySchema, auditLogQuerySchema, idParamSchema } from "@enermesh/shared";
+import { createLimiter } from "../lib/rateLimit.js";
 import { ok } from "../lib/response.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { authenticate, authorize } from "../middleware/auth.js";
@@ -8,7 +9,13 @@ import { listAdminUsers, listAuditLogs, patchAdminUser } from "../services/admin
 
 export const adminRouter = Router();
 
-adminRouter.use(authenticate, authorize("ADMIN"));
+const adminLimiter = createLimiter({
+  windowMs: 60_000,
+  limit: 40,
+  message: "Too many admin requests. Try again shortly.",
+});
+
+adminRouter.use(authenticate, authorize("ADMIN"), adminLimiter);
 
 adminRouter.get(
   "/users",

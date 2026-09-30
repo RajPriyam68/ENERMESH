@@ -1,7 +1,6 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
 import { aiInsightRequestSchema } from "@enermesh/shared";
-import { env } from "../config/env.js";
+import { createLimiter } from "../lib/rateLimit.js";
 import { ok } from "../lib/response.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { authenticate, authorize } from "../middleware/auth.js";
@@ -10,16 +9,10 @@ import { createAiInsight, getAiStatus } from "../services/ai.service.js";
 
 export const aiRouter = Router();
 
-const aiLimiter = rateLimit({
+const aiLimiter = createLimiter({
   windowMs: 60_000,
   limit: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: () => env.NODE_ENV === "test",
-  message: {
-    success: false,
-    error: { code: "RATE_LIMITED", message: "Too many advisory requests. Try again shortly." },
-  },
+  message: "Too many advisory requests. Try again shortly.",
 });
 
 aiRouter.get(

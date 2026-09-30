@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S9 — Reports, admin, and audit logs** is complete. ADMIN-only reports use real Prisma rows; empty marketplace volume stays labelled 0. Next is security/testing (S10). See `docs/PROJECT_STATE.md`.
+**S10 — Security, testing, and performance** is complete. Headers, CORS, cookies, rate limits, validation, and production error leakage are hardened. Next is Docker/CI polish (S11). See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 

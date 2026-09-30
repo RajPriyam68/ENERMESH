@@ -1,8 +1,7 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
 import { loginSchema, refreshTokenSchema, registerSchema } from "@enermesh/shared";
-import { env } from "../config/env.js";
 import { clearRefreshCookie, readRefreshCookie, setRefreshCookie } from "../lib/cookies.js";
+import { createLimiter } from "../lib/rateLimit.js";
 import { refreshExpiryDate, verifyAccessToken, verifyRefreshToken } from "../lib/jwt.js";
 import { ok } from "../lib/response.js";
 import { asyncHandler } from "../middleware/asyncHandler.js";
@@ -13,16 +12,10 @@ import { getPublicUserById, login, logout, refresh, register } from "../services
 
 export const authRouter = Router();
 
-const authLimiter = rateLimit({
+const authLimiter = createLimiter({
   windowMs: 60_000,
   limit: 20,
-  standardHeaders: true,
-  legacyHeaders: false,
-  skip: () => env.NODE_ENV === "test",
-  message: {
-    success: false,
-    error: { code: "RATE_LIMITED", message: "Too many attempts. Try again shortly." },
-  },
+  message: "Too many attempts. Try again shortly.",
 });
 
 authRouter.post(
