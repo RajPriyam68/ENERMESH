@@ -40,4 +40,4 @@ Explorer URL is composed from `BLOCK_EXPLORER_URL` + `txHash`. No vendor is hard
 
 ## Keys
 
-Deployer keys stay in the operator environment, never in the repo, never in the Next.js bundle. Users sign with MetaMask. The API never stores or logs private keys.
+Deployer keys stay in the operator environment (`DEPLOYER_PRIVATE_KEY` is optional and never committed), never in images, never in the Next.js bundle. Users sign with MetaMask. The API never stores or logs private keys. Wallet UI mined receipts are not `CONFIRMED` until `POST /trades/report` verifies the receipt and event.

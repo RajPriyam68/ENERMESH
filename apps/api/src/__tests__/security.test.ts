@@ -177,6 +177,7 @@ describe("production secrets", () => {
       ),
     );
     assert.throws(() => assertProductionSecrets(productionEnv({ WEB_ORIGIN: "*" })));
+    assert.throws(() => assertProductionSecrets(productionEnv({ WEB_ORIGIN: "" })));
     assert.doesNotThrow(() => assertProductionSecrets(productionEnv()));
   });
 });

@@ -106,6 +106,7 @@
 
 # Next.js / Hardhat / Prisma
 **/.next/
+**/.next-dev/
 **/out/
 **/artifacts/
 **/cache/

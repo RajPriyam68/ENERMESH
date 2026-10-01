@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 10 hardens headers, CORS, cookies, rate limits, validation, and production error leakage. Empty marketplace volume stays labelled 0. REST remains the source of truth.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 11 prepares Docker, production scripts, CI, and provider-agnostic deployment. Empty marketplace volume stays labelled 0. REST remains the source of truth.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {

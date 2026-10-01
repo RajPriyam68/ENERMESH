@@ -5,7 +5,8 @@ const apiInternal = process.env.API_INTERNAL_URL ?? "http://localhost:3001";
 const nextConfig: NextConfig = {
   output: "standalone",
   transpilePackages: ["@enermesh/shared"],
-  allowedDevOrigins: [".monkeycode-ai.live"],
+  allowedDevOrigins: ["*.monkeycode-ai.live"],
+  distDir: process.env.NODE_ENV === "production" ? ".next" : ".next-dev",
   experimental: {
     cpus: 1,
     webpackBuildWorker: false,

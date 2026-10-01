@@ -57,7 +57,7 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 ## S5 coverage
 
 - Socket handshake: missing token and invalid token rejected with `UNAUTHENTICATED`
-- Valid access token receives `system:hello` with sprint label (S10 after this sprint)
+- Valid access token receives `system:hello` with sprint label (S11 after this sprint)
 - `listing:created` emitted only after a validated POST; client-originated privileged emits are ignored
 - Notification REST: unauthenticated 401, missing id 404, listing author receives `LISTING_CREATED`
 - Web: socket event → query-key mapping; duplicate `eventId` dropped
@@ -96,9 +96,16 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Web: extra open-redirect sanitization case
 - Rate limiters skip when `NODE_ENV=test` so S0–S9 HTTP tests stay deterministic; limiter behaviour is asserted separately
 
+## S11 coverage
+
+- API: health/ready sprint label S11; HTTP server close is idempotent
+- Web: `resolveSocketUrl` keeps same-origin rewrites and accepts only http(s) origins
+- CI: typecheck, lint, tests, production build, Hardhat tests, Compose config, Docker image build without push
+- Contracts: `npm run contracts:test` runs Hardhat Mocha (`npx hardhat test`)
+
 ## Planned (later sprints)
 
-Listing on-chain id persistence on the Listing row.
+Listing on-chain id persistence on the Listing row (S12).
 
 ## Commands
 
@@ -107,6 +114,8 @@ npm run test
 npm run typecheck
 npm run lint
 npm run build
+npx hardhat test
+docker compose config
 ```
 
 Do not fabricate passing tests. If Postgres is absent, readiness tests that need the DB must assert degraded behaviour rather than inventing a live database.

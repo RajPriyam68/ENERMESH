@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S10 — Security, testing, and performance** is complete. Headers, CORS, cookies, rate limits, validation, and production error leakage are hardened. Next is Docker/CI polish (S11). See `docs/PROJECT_STATE.md`.
+**S11 — Docker/CI polish, production scripts, and demo path** is complete. Images, Compose, CI, and production start scripts are provider-agnostic. Next is hybrid on-chain listing id persistence (S12). See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 
@@ -43,9 +43,9 @@ cp .env.example .env
 # Optional: start PostgreSQL via Compose
 docker compose up -d postgres
 
-# Generate Prisma client and apply schema
+# Generate Prisma client and apply migrations
 npm run db:generate
-npm run db:push
+npm run db:deploy
 
 # Optional: first admin (never self-assigned through /register)
 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='ChangeMe123' npm run seed:admin
@@ -55,7 +55,14 @@ chmod +x start.sh
 ./start.sh
 ```
 
-Web is the preview entrypoint. The Next.js rewrite proxy forwards `/api/*` to the API so a single exposed port works.
+Web is the preview entrypoint. The Next.js rewrite proxy forwards `/api/*` and `/socket.io/*` to the API so a single exposed port works.
+
+Production locally (requires unique JWT secrets in `.env`):
+
+```bash
+chmod +x scripts/start-api-prod.sh scripts/start-web-prod.sh
+docker compose up --build
+```
 
 ## Health
 
@@ -75,7 +82,7 @@ No cloud vendor is hardcoded. Compatible hosts:
 | PostgreSQL | Supabase, Neon, RDS, local, any Postgres 16 |
 | Chain | Polygon Amoy or any EVM via `CHAIN_ID` / `RPC_URL` / `CONTRACT_ADDRESS` |
 
-Switching providers is configuration only (`.env`). See `docs/deployment.md`.
+Switching providers is configuration only (`.env`). CI builds images but does not deploy. See `docs/deployment.md`.
 
 ## Security notes
 

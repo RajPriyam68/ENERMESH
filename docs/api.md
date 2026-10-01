@@ -187,6 +187,10 @@ Body for ingest: `kwh`, optional `recordedAt`, `deviceId`, `sourceLabel` (`ACTUA
 
 Helmet sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Referrer-Policy: no-referrer`. CORS reflects only `WEB_ORIGIN`. Invalid JSON is `400 INVALID_JSON`. Unexpected errors always return a generic `INTERNAL_ERROR` message. Production refuses default/short/identical JWT secrets and wildcard `WEB_ORIGIN`. Wallet unlink addresses are Zod-validated (`422` on garbage).
 
+### Deployment (S11)
+
+Liveness (`/health`) and readiness (`/ready`) report sprint `S11`. Readiness returns 503 when PostgreSQL is unreachable. Production start applies `prisma migrate deploy` before `node dist/index.js`. Docker HEALTHCHECK uses `/api/v1/ready`.
+
 ## Planned surface (later sprints)
 
 On-chain listing id persistence (S12).

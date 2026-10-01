@@ -31,6 +31,15 @@ export function getSocketServer(): Server | null {
   return ioRef;
 }
 
+export function closeSocketServer(): Promise<void> {
+  const io = ioRef;
+  ioRef = null;
+  if (!io) return Promise.resolve();
+  return new Promise((resolve) => {
+    void io.close(() => resolve());
+  });
+}
+
 function envelope<T>(data: T): SocketEnvelope<T> {
   return {
     eventId: randomUUID(),
@@ -199,7 +208,7 @@ export function createSocketServer(httpServer: HttpServer) {
     const user = socket.data.user as { id: string; role: string };
     const hello: SystemHelloPayload = {
       service: "enermesh",
-      sprint: "S10",
+      sprint: "S11",
       userId: user.id,
       message: "Realtime channel ready. Privileged events are server-emitted only.",
     };

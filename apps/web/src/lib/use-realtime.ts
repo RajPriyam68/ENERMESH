@@ -7,6 +7,7 @@ import { io, type Socket } from "socket.io-client";
 import { useAuthStore } from "./auth-store";
 import { envelopeEventId, queryKeysForSocketEvent, shouldApplyEvent } from "./realtime";
 import { useRealtimeStore, type RealtimeStatus } from "./realtime-store";
+import { resolveSocketUrl } from "./socket-url";
 
 export type { RealtimeStatus };
 
@@ -34,7 +35,7 @@ export function useRealtimeSync(): RealtimeStatus {
       return;
     }
 
-    const socket = io({
+    const socket = io(resolveSocketUrl(process.env.NEXT_PUBLIC_SOCKET_URL), {
       path: "/socket.io",
       transports: ["websocket", "polling"],
       auth: { token },

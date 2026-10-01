@@ -25,6 +25,6 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | IoT adapters | S8 | `packages/shared/src/iot.ts`, `apps/api/src/services/iot.service.ts`, `apps/web/src/app/telemetry` | Simulated vs actual labels; empty history = 0 |
 | Reports / admin / audit | S9 | `apps/api/src/routes/admin.ts`, `apps/api/src/routes/reports.ts`, `apps/web/src/app/admin` | Audit completeness from real AuditLog rows; empty reports stay 0 |
 | Security tests | S10 | `apps/api/src/__tests__/security.test.ts`, `apps/api/src/app.ts`, `apps/api/src/lib/rateLimit.ts` | Cross-origin reflection = 0; last-admin disable 409; limiter 429; generic 500 |
-| Deploy polish | S11 | planned | Demo path green |
+| Deploy polish | S11 | `apps/api/Dockerfile`, `apps/web/Dockerfile`, `docker-compose.yml`, `.github/workflows/ci.yml`, `docs/deployment.md` | Demo path documented; CI builds images without deploying |
 
 No row may be marked measured with invented numbers.

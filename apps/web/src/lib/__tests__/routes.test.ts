@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { isProtectedPath, loginHref, sanitizeNextPath } from "../routes.js";
+import { resolveSocketUrl } from "../socket-url.js";
 
 describe("sanitizeNextPath", () => {
   it("allows same-site absolute paths", () => {
@@ -47,5 +48,21 @@ describe("isProtectedPath", () => {
     assert.equal(isProtectedPath("/admin/audit"), true);
     assert.equal(isProtectedPath("/admin/reports"), true);
     assert.equal(isProtectedPath("/marketplace"), false);
+  });
+});
+
+describe("resolveSocketUrl", () => {
+  it("keeps same-origin rewrites when the public socket URL is empty or relative", () => {
+    assert.equal(resolveSocketUrl(undefined), undefined);
+    assert.equal(resolveSocketUrl(""), undefined);
+    assert.equal(resolveSocketUrl("   "), undefined);
+    assert.equal(resolveSocketUrl("/socket.io"), undefined);
+  });
+
+  it("accepts absolute http(s) origins and rejects other schemes", () => {
+    assert.equal(resolveSocketUrl("https://api.example/socket.io"), "https://api.example");
+    assert.equal(resolveSocketUrl("http://localhost:3001"), "http://localhost:3001");
+    assert.equal(resolveSocketUrl("javascript:alert(1)"), undefined);
+    assert.equal(resolveSocketUrl("not a url"), undefined);
   });
 });

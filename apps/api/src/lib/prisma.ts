@@ -20,3 +20,7 @@ export async function pingDatabase(): Promise<boolean> {
     return false;
   }
 }
+
+export async function disconnectDatabase(): Promise<void> {
+  await prisma.$disconnect();
+}

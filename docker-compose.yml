@@ -4,57 +4,93 @@ services:
     container_name: enermesh-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: enermesh
-      POSTGRES_PASSWORD: enermesh
-      POSTGRES_DB: enermesh
+      POSTGRES_USER: ${POSTGRES_USER:-enermesh}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-enermesh}
+      POSTGRES_DB: ${POSTGRES_DB:-enermesh}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - enermesh_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U enermesh -d enermesh"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 10
+      start_period: 10s
 
   api:
     build:
       context: .
       dockerfile: apps/api/Dockerfile
+    image: enermesh-api:local
     container_name: enermesh-api
     restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
-      DATABASE_URL: postgresql://enermesh:enermesh@postgres:5432/enermesh?schema=public
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-enermesh}:${POSTGRES_PASSWORD:-enermesh}@postgres:5432/${POSTGRES_DB:-enermesh}?schema=public
       API_HOST: 0.0.0.0
       API_PORT: 3001
-      WEB_ORIGIN: http://localhost:3000
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      SOCKET_CORS_ORIGIN: ${SOCKET_CORS_ORIGIN:-http://localhost:3000}
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      CHAIN_ID: ${CHAIN_ID:-80002}
+      CHAIN_NAME: ${CHAIN_NAME:-polygon-amoy}
+      RPC_URL: ${RPC_URL:-https://rpc-amoy.polygon.technology}
+      BLOCK_EXPLORER_URL: ${BLOCK_EXPLORER_URL:-https://amoy.polygonscan.com}
+      CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
+      TRUST_PROXY: ${TRUST_PROXY:-false}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
     ports:
       - "3001:3001"
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3001/api/v1/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
       interval: 10s
       timeout: 5s
       retries: 8
+      start_period: 40s
+    stop_grace_period: 20s
 
   web:
     build:
       context: .
       dockerfile: apps/web/Dockerfile
+      args:
+        API_INTERNAL_URL: http://api:3001
+        NEXT_PUBLIC_API_BASE_URL: /api/v1
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-}
+        NEXT_PUBLIC_CHAIN_ID: ${NEXT_PUBLIC_CHAIN_ID:-80002}
+        NEXT_PUBLIC_CHAIN_NAME: ${NEXT_PUBLIC_CHAIN_NAME:-polygon-amoy}
+        NEXT_PUBLIC_RPC_URL: ${NEXT_PUBLIC_RPC_URL:-https://rpc-amoy.polygon.technology}
+        NEXT_PUBLIC_BLOCK_EXPLORER_URL: ${NEXT_PUBLIC_BLOCK_EXPLORER_URL:-https://amoy.polygonscan.com}
+        NEXT_PUBLIC_CONTRACT_ADDRESS: ${NEXT_PUBLIC_CONTRACT_ADDRESS:-}
+    image: enermesh-web:local
     container_name: enermesh-web
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
     environment:
-      NEXT_PUBLIC_API_BASE_URL: /api/v1
+      NODE_ENV: production
       API_INTERNAL_URL: http://api:3001
+      NEXT_PUBLIC_API_BASE_URL: /api/v1
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 20s
+    stop_grace_period: 15s
 
 volumes:
   enermesh_pgdata:
