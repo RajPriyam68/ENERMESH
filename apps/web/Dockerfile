@@ -6,7 +6,7 @@ COPY apps/web/package.json apps/web/package.json
 COPY apps/api/package.json apps/api/package.json
 COPY packages/shared/package.json packages/shared/package.json
 COPY packages/contracts/package.json packages/contracts/package.json
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 FROM node:22-alpine AS build
 WORKDIR /app
