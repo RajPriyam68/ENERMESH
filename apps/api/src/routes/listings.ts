@@ -3,6 +3,7 @@ import {
   createListingSchema,
   idParamSchema,
   listingFilterSchema,
+  reportOnChainListingSchema,
   updateListingSchema,
 } from "@enermesh/shared";
 import { ok } from "../lib/response.js";
@@ -10,6 +11,7 @@ import { asyncHandler } from "../middleware/asyncHandler.js";
 import { authenticate, authorize } from "../middleware/auth.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { getValidatedQuery, validate } from "../middleware/validate.js";
+import { reportOnChainListing } from "../services/listing-chain.service.js";
 import {
   cancelListing,
   createListing,
@@ -103,6 +105,17 @@ listingsRouter.post(
   validate({ params: idParamSchema }),
   asyncHandler(async (req, res) => {
     const listing = await cancelListing(req.user!, req.params.id as string);
+    return ok(res, { listing });
+  }),
+);
+
+listingsRouter.post(
+  "/:id/on-chain",
+  authenticate,
+  authorize("SELLER", "ADMIN"),
+  validate({ params: idParamSchema, body: reportOnChainListingSchema }),
+  asyncHandler(async (req, res) => {
+    const listing = await reportOnChainListing(req.user!, req.params.id as string, req.body);
     return ok(res, { listing });
   }),
 );

@@ -180,13 +180,21 @@ model Listing {
   marketZone            String
   availableFrom         DateTime
   availableUntil        DateTime
-  status                ListingStatus @default(ACTIVE)
-  onChainListingId      String?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  seller                User          @relation("SellerListings", fields: [sellerId], references: [id])
-  bids                  Bid[]
-  matches               Match[]
+  status                     ListingStatus @default(ACTIVE)
+  onChainListingId           String?       @unique
+  onChainTxHash              String?       @unique
+  onChainIdempotencyKey      String?       @unique
+  onChainContractAddress     String?
+  onChainNetwork             String?
+  onChainChainId             Int?
+  onChainBlockNumber         Int?
+  onChainConfirmationStatus  String?
+  onChainConfirmedAt         DateTime?
+  createdAt                  DateTime      @default(now())
+  updatedAt                  DateTime      @updatedAt
+  seller                     User          @relation("SellerListings", fields: [sellerId], references: [id])
+  bids                       Bid[]
+  matches                    Match[]
 
   @@index([status, marketZone, energyType])
   @@index([sellerId])

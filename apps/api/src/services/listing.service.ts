@@ -1,5 +1,11 @@
 import type { Listing, ListingStatus, Prisma } from "@prisma/client";
-import type { CreateListingInput, ListingFilter, ListingPublic, UpdateListingInput } from "@enermesh/shared";
+import type {
+  BlockchainTxStatus,
+  CreateListingInput,
+  ListingFilter,
+  ListingPublic,
+  UpdateListingInput,
+} from "@enermesh/shared";
 import {
   checkQuantityIntegrity,
   quantitiesFromAvailable,
@@ -8,6 +14,7 @@ import {
   roundPrice,
 } from "@enermesh/shared";
 import { recordAudit } from "../lib/audit.js";
+import { explorerTxUrl } from "../lib/chain-rpc.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { createNotification } from "./notification.service.js";
@@ -24,6 +31,19 @@ const SORT_MAP: Record<string, keyof Listing> = {
 };
 
 type ListingWithSeller = Listing & { seller: { displayName: string } };
+
+const ON_CHAIN_STATUSES: BlockchainTxStatus[] = [
+  "WAITING_FOR_SIGNATURE",
+  "PENDING",
+  "CONFIRMED",
+  "FAILED",
+  "REJECTED",
+];
+
+function toOnChainStatus(value: string | null | undefined): BlockchainTxStatus | undefined {
+  if (!value) return undefined;
+  return ON_CHAIN_STATUSES.includes(value as BlockchainTxStatus) ? (value as BlockchainTxStatus) : undefined;
+}
 
 function decimalNumber(value: { toString(): string } | number | string): number {
   return typeof value === "number" ? value : Number(value.toString());
@@ -46,6 +66,14 @@ export function toPublicListing(listing: ListingWithSeller): ListingPublic {
     availableFrom: listing.availableFrom.toISOString(),
     availableUntil: listing.availableUntil.toISOString(),
     status: listing.status,
+    onChainListingId: listing.onChainListingId ?? undefined,
+    onChainTxHash: listing.onChainTxHash ?? undefined,
+    onChainContractAddress: listing.onChainContractAddress ?? undefined,
+    onChainNetwork: listing.onChainNetwork ?? undefined,
+    onChainChainId: listing.onChainChainId ?? undefined,
+    onChainBlockNumber: listing.onChainBlockNumber ?? undefined,
+    onChainConfirmationStatus: toOnChainStatus(listing.onChainConfirmationStatus),
+    explorerUrl: explorerTxUrl(listing.onChainTxHash),
     createdAt: listing.createdAt.toISOString(),
     updatedAt: listing.updatedAt.toISOString(),
   };
@@ -95,7 +123,7 @@ async function expireIfNeeded(listing: ListingWithSeller): Promise<ListingWithSe
   return listing;
 }
 
-const listingInclude = { seller: { select: { displayName: true } } } as const;
+export const listingInclude = { seller: { select: { displayName: true } } } as const;
 
 export async function createListing(
   sellerId: string,

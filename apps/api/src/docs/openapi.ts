@@ -15,7 +15,7 @@ export const openApiDocument = {
     title: "EnerMesh API",
     version: "0.1.0",
     description:
-      "Peer-to-peer renewable energy marketplace API. Sprint 11 prepares Docker, production scripts, CI, and provider-agnostic deployment. Empty marketplace volume stays labelled 0. REST remains the source of truth.",
+      "Peer-to-peer renewable energy marketplace API. Sprint 12 persists a verified on-chain listing id after ListingCreated receipt/event checks. Empty marketplace volume stays labelled 0. REST remains the source of truth.",
   },
   servers: [{ url: "/api/v1", description: "Versioned API" }],
   components: {
@@ -284,6 +284,23 @@ export const openApiDocument = {
           "403": envelope("Not the owner"),
           "404": envelope("Not found"),
           "409": envelope("Not cancellable"),
+        },
+      },
+    },
+    "/listings/{id}/on-chain": {
+      post: {
+        summary: "Report a createListing transaction for backend ListingCreated verification",
+        tags: ["Listings"],
+        security: [{ bearerAuth: [] }],
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string", format: "uuid" } }],
+        requestBody: jsonBody("action (confirm|reject), idempotencyKey; txHash required except reject"),
+        responses: {
+          "200": envelope("Listing after RPC receipt and ListingCreated verification; PENDING if unmined"),
+          "401": envelope("Authentication required"),
+          "403": envelope("Not the owner"),
+          "404": envelope("Listing not found"),
+          "409": envelope("Wrong wallet, network, contract, event, duplicate, stale, or reverted"),
+          "422": envelope("Validation failed"),
         },
       },
     },

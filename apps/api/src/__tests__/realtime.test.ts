@@ -120,7 +120,7 @@ describe("socket and notifications", { skip: !dbReady }, () => {
     await waitForConnect(socket);
     const payload = await hello;
     assert.equal(payload.service, "enermesh");
-    assert.equal(payload.sprint, "S11");
+    assert.equal(payload.sprint, "S12");
     assert.equal(payload.userId, seller.userId);
     socket.disconnect();
   });

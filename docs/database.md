@@ -8,7 +8,7 @@ Provider: PostgreSQL 16 via Prisma. Connection string: `DATABASE_URL` (any compa
   default market zone, energy interests, notification preferences, last login
 - **RefreshToken** — SHA-256 hashed refresh tokens, expiry, revoke timestamp
 - **Wallet** — EVM address per user/chain, primary flag, verified timestamp, single-use nonce + issue/expiry
-- **Listing** — original/available/sold kWh, min/max trade size, price, zone, window, status
+- **Listing** — original/available/sold kWh, min/max trade size, price, zone, window, status. S12 adds unique `onChainListingId`, unique `onChainTxHash`, unique `onChainIdempotencyKey`, plus contract/network/chain/block/confirmation metadata. The on-chain id is written only after verified `ListingCreated`.
 - **Bid** — requested/unmatched/matched kWh, max price, type, zone, window, status
 - **Match** — listing+bid, matched kWh, price, status
 - **Trade** — quantities, amounts, blockchain fields, unique `txHash`, unique `idempotencyKey`
@@ -25,6 +25,7 @@ Provider: PostgreSQL 16 via Prisma. Connection string: `DATABASE_URL` (any compa
 - Bid statuses: `OPEN | MATCHED | PARTIALLY_MATCHED | EXPIRED | CANCELLED | COMPLETED`
 - Trade `CONFIRMED` only after chain verification
 - Unique `idempotencyKey` and unique `txHash` prevent duplicate settlement rows
+- Unique `onChainListingId` / `onChainTxHash` / `onChainIdempotencyKey` prevent duplicate listing mappings
 
 ## Indexes
 

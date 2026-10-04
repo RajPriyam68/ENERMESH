@@ -24,7 +24,21 @@ import { createNotification } from "./notification.service.js";
 
 type ListingRow = Listing & { location: string };
 type BidRow = Bid;
-type MatchWithListing = Match & { listing: { energyType: Listing["energyType"]; marketZone: string; location: string } };
+export const matchListingSelect = {
+  energyType: true,
+  marketZone: true,
+  location: true,
+  onChainListingId: true,
+} as const;
+
+type MatchWithListing = Match & {
+  listing: {
+    energyType: Listing["energyType"];
+    marketZone: string;
+    location: string;
+    onChainListingId: string | null;
+  };
+};
 
 export function decimalNumber(value: { toString(): string } | number | string): number {
   return typeof value === "number" ? value : Number(value.toString());
@@ -61,6 +75,7 @@ export function toPublicMatch(match: MatchWithListing): MatchPublic {
     energyType: match.listing.energyType,
     marketZone: match.listing.marketZone,
     listingLocation: match.listing.location,
+    onChainListingId: match.listing.onChainListingId ?? undefined,
     createdAt: match.createdAt.toISOString(),
   };
 }
@@ -275,7 +290,7 @@ async function persistFills(
         pricePerKwh: roundPrice(plan.pricePerKwh),
         status: "PROPOSED",
       },
-      include: { listing: { select: { energyType: true, marketZone: true, location: true } } },
+      include: { listing: { select: matchListingSelect } },
     });
     createdMatches.push(match);
     workingBid = nextBid;

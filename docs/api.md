@@ -95,6 +95,18 @@ List responses include `listings`, `page`, `pageSize`, `total`, `totalPages` in 
 
 Create without a verified wallet returns 409 `WALLET_REQUIRED`. Unknown fields such as `soldQuantityKwh` return 422. Quantity integrity failures return 409 `QUANTITY_INTEGRITY`.
 
+### On-chain listing id (S12)
+
+| Method | Path | Auth | Description |
+| --- | --- | --- | --- |
+| POST | `/api/v1/listings/:id/on-chain` | owner or ADMIN | Report `createListing` for ListingCreated verification |
+
+Body: `action` (`confirm` \| `reject`), `idempotencyKey`; `txHash` required except for `reject`.
+
+The API queries `RPC_URL`, requires `CHAIN_ID` and `CONTRACT_ADDRESS`, and persists `onChainListingId` only after a successful receipt plus `ListingCreated` on the configured contract, matching seller wallet, quantity, price, and `externalId` (listing UUID). A missing receipt is `PENDING` with no listing id. Reverts and invalid events are `FAILED` (`409`) and do not store an id. Duplicate on-chain ids return `409 DUPLICATE_ONCHAIN_ID`. Duplicate `txHash` / idempotency key returns `409 DUPLICATE_TX`. The wallet UI cannot mark a listing id confirmed.
+
+Listing responses include optional `onChainListingId`, `onChainTxHash`, `onChainContractAddress`, `onChainNetwork`, `onChainChainId`, `onChainBlockNumber`, `onChainConfirmationStatus`, and `explorerUrl` when a report exists. Match responses include `onChainListingId` once confirmed.
+
 ### Bids (S3)
 
 | Method | Path | Auth | Description |
@@ -189,13 +201,9 @@ Helmet sets `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, and `Ref
 
 ### Deployment (S11)
 
-Liveness (`/health`) and readiness (`/ready`) report sprint `S11`. Readiness returns 503 when PostgreSQL is unreachable. Production start applies `prisma migrate deploy` before `node dist/index.js`. Docker HEALTHCHECK uses `/api/v1/ready`.
+Liveness (`/health`) and readiness (`/ready`) report sprint `S12`. Readiness returns 503 when PostgreSQL is unreachable. Production start applies `prisma migrate deploy` before `node dist/index.js`. Docker HEALTHCHECK uses `/api/v1/ready`.
 
-## Planned surface (later sprints)
-
-On-chain listing id persistence (S12).
-
-All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement occurs.
+All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotency keys where settlement or on-chain listing confirmation occurs.
 
 ## Conventions
 

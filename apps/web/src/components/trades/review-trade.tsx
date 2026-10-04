@@ -66,9 +66,9 @@ export function ReviewTrade({ match, action }: { match: MatchPublic; action: Tra
   const [apiError, setApiError] = useState<string | null>(null);
 
   useEffect(() => {
-    setOnChainListingId(getStoredOnChainListingId(match.listingId));
+    setOnChainListingId(match.onChainListingId ?? getStoredOnChainListingId(match.listingId));
     setOnChainTradeId(getStoredOnChainTradeId(match.id));
-  }, [match.id, match.listingId]);
+  }, [match.id, match.listingId, match.onChainListingId]);
 
   useEffect(() => {
     if (!token) return;

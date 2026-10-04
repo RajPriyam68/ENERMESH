@@ -57,7 +57,7 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 ## S5 coverage
 
 - Socket handshake: missing token and invalid token rejected with `UNAUTHENTICATED`
-- Valid access token receives `system:hello` with sprint label (S11 after this sprint)
+- Valid access token receives `system:hello` with sprint label (S12 after this sprint)
 - `listing:created` emitted only after a validated POST; client-originated privileged emits are ignored
 - Notification REST: unauthenticated 401, missing id 404, listing author receives `LISTING_CREATED`
 - Web: socket event → query-key mapping; duplicate `eventId` dropped
@@ -103,9 +103,11 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - CI: typecheck, lint, tests, production build, Hardhat tests, Compose config, Docker image build without push
 - Contracts: `npm run contracts:test` runs Hardhat Mocha (`npx hardhat test`)
 
-## Planned (later sprints)
+## S12 coverage
 
-Listing on-chain id persistence on the Listing row (S12).
+- Shared: `reportOnChainListingSchema` requires `txHash` for confirm and forbids it on reject
+- API: ListingCreated parsing only from the configured contract; persist verified listing id; idempotent confirm; duplicate on-chain id / txHash; wrong chain/contract/wallet; missing/malformed event; revert; other listing uuid; concurrent confirm; ownership 403; S4 settlement tests still pass
+- Web: listing search params unchanged; publish UI reports txHash to `/listings/:id/on-chain` and never treats a mined wallet receipt as confirmed
 
 ## Commands
 

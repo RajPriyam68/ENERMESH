@@ -107,7 +107,7 @@ Defaults: chain id `80002`, RPC `https://rpc-amoy.polygon.technology`, explorer 
 
 ## Health, restart, rollback
 
-1. Confirm `GET /api/v1/health` returns 200 and `sprint` `S11`
+1. Confirm `GET /api/v1/health` returns 200 and `sprint` `S12`
 2. Confirm `GET /api/v1/ready` returns 200 with `database: connected`
 3. Restart API: `docker compose restart api` or re-run the production start script
 4. Rollback: deploy the previous image/commit, restore Postgres if a migration must be undone, then `db:deploy` only forward
@@ -116,6 +116,6 @@ CI does not deploy. GitHub Actions runs typecheck, lint, tests, production build
 
 ## Final demo path
 
-Seller registers and verifies a wallet → create offer → marketplace browse → buyer bid → matching → trade review → MetaMask on Polygon Amoy → backend `POST /trades/report` verifies receipt/event → DB `CONFIRMED` → Socket.IO/notification → dashboards/reports/admin → explorer link from `BLOCK_EXPLORER_URL` + `txHash`.
+Seller registers and verifies a wallet → create offer → MetaMask `createListing` → backend `POST /listings/:id/on-chain` verifies `ListingCreated` and persists the on-chain listing id → marketplace browse → buyer bid → matching → trade review uses the persisted id → MetaMask on Polygon Amoy → backend `POST /trades/report` verifies receipt/event → DB `CONFIRMED` → Socket.IO/notification → dashboards/reports/admin → explorer link from `BLOCK_EXPLORER_URL` + `txHash`.
 
 A wallet UI mined receipt stays `PENDING` until backend verification.

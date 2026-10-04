@@ -3,8 +3,12 @@ import { describe, it } from "node:test";
 import { Interface } from "ethers";
 import type { RpcReceipt } from "../lib/chain-rpc.js";
 import {
+  CREATE_LISTING_SELECTOR,
   ENERGY_PURCHASED_TOPIC,
+  LISTING_CREATED_TOPIC,
+  parseCreateListingInput,
   parseEnergyPurchasedLogs,
+  parseListingCreatedLogs,
   parseTradeSettledLogs,
   priceToWeiPerMilliKwh,
   purchaseValueWei,
@@ -18,11 +22,50 @@ const BUYER = "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 const SELLER = "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
 
 const marketplaceInterface = new Interface([
+  "event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 quantityKwh, uint256 pricePerKwh)",
   "event EnergyPurchased(uint256 indexed listingId, uint256 indexed tradeId, address indexed buyer, uint256 quantityKwh, uint256 totalPaid)",
   "event TradeSettled(uint256 indexed tradeId, address indexed seller, address indexed buyer, uint256 quantityKwh)",
 ]);
 
 describe("marketplace event parsing", () => {
+  it("decodes ListingCreated only from the configured contract", () => {
+    const encoded = marketplaceInterface.encodeEventLog(marketplaceInterface.getEvent("ListingCreated")!, [
+      7n,
+      SELLER,
+      100_000n,
+      120n,
+    ]);
+    assert.equal((encoded.topics[0] as string).toLowerCase(), LISTING_CREATED_TOPIC);
+    const receipt: RpcReceipt = {
+      status: "0x1",
+      transactionHash: "0x3",
+      blockNumber: "0x3",
+      to: CONTRACT,
+      logs: [
+        { address: OTHER, topics: encoded.topics as string[], data: encoded.data },
+        { address: CONTRACT, topics: encoded.topics as string[], data: encoded.data },
+      ],
+    };
+    const events = parseListingCreatedLogs(receipt, CONTRACT);
+    assert.equal(events.length, 1);
+    assert.equal(events[0]!.listingId, 7n);
+    assert.equal(events[0]!.seller, SELLER);
+    assert.equal(events[0]!.quantityKwh, 100_000n);
+    assert.equal(events[0]!.pricePerKwh, 120n);
+  });
+
+  it("parses createListing calldata including externalId", () => {
+    const quantity = 100_000n;
+    const price = 120n;
+    const externalId = 42n;
+    const input = `${CREATE_LISTING_SELECTOR}${quantity.toString(16).padStart(64, "0")}${price.toString(16).padStart(64, "0")}${externalId.toString(16).padStart(64, "0")}`;
+    const parsed = parseCreateListingInput(input);
+    assert.ok(parsed);
+    assert.equal(parsed.quantityKwh, quantity);
+    assert.equal(parsed.pricePerKwh, price);
+    assert.equal(parsed.externalId, externalId);
+  });
+
   it("decodes EnergyPurchased only from the configured contract", () => {
     const quantity = toMilliKwh(30);
     const paid = purchaseValueWei(quantity, priceToWeiPerMilliKwh(0.12));

@@ -1,15 +1,32 @@
 import { Interface } from "ethers";
 import type { RpcLog, RpcReceipt } from "./chain-rpc.js";
 
+export const LISTING_CREATED_TOPIC =
+  "0x12dc294b81a709d694b1337a350a12a00076c19a77a25aab67a5f0c07e0f164d";
 export const ENERGY_PURCHASED_TOPIC =
   "0xa048ed06be287289253cf8ad035fb91ecbbcb2d20d13380d25ac345cc627d429";
 export const TRADE_SETTLED_TOPIC =
   "0xad940b63e9eddcb865c714b11742f31c912439f2b51c704d05355cc8b1772f86";
+export const CREATE_LISTING_SELECTOR = "0xb03053b6";
 
 const marketplaceInterface = new Interface([
+  "event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 quantityKwh, uint256 pricePerKwh)",
   "event EnergyPurchased(uint256 indexed listingId, uint256 indexed tradeId, address indexed buyer, uint256 quantityKwh, uint256 totalPaid)",
   "event TradeSettled(uint256 indexed tradeId, address indexed seller, address indexed buyer, uint256 quantityKwh)",
 ]);
+
+export interface ListingCreatedEvent {
+  listingId: bigint;
+  seller: string;
+  quantityKwh: bigint;
+  pricePerKwh: bigint;
+}
+
+export interface CreateListingCall {
+  quantityKwh: bigint;
+  pricePerKwh: bigint;
+  externalId: bigint;
+}
 
 export interface EnergyPurchasedEvent {
   listingId: bigint;
@@ -63,6 +80,39 @@ function parseLog(log: RpcLog) {
   } catch {
     return null;
   }
+}
+
+export function uuidToUint256(id: string): bigint {
+  const hex = id.replaceAll("-", "");
+  if (!/^[0-9a-fA-F]{32}$/.test(hex)) return 0n;
+  return BigInt(`0x${hex}`);
+}
+
+export function parseCreateListingInput(input: string): CreateListingCall | null {
+  const hex = input.startsWith("0x") ? input.slice(2).toLowerCase() : input.toLowerCase();
+  const selector = CREATE_LISTING_SELECTOR.slice(2);
+  if (!hex.startsWith(selector) || hex.length < selector.length + 64 * 3) return null;
+  const quantityKwh = BigInt(`0x${hex.slice(8, 72)}`);
+  const pricePerKwh = BigInt(`0x${hex.slice(72, 136)}`);
+  const externalId = BigInt(`0x${hex.slice(136, 200)}`);
+  return { quantityKwh, pricePerKwh, externalId };
+}
+
+export function parseListingCreatedLogs(receipt: RpcReceipt, contractAddress: string): ListingCreatedEvent[] {
+  const events: ListingCreatedEvent[] = [];
+  for (const log of receipt.logs) {
+    if (!sameAddress(log.address, contractAddress)) continue;
+    if ((log.topics[0] ?? "").toLowerCase() !== LISTING_CREATED_TOPIC) continue;
+    const parsed = parseLog(log);
+    if (!parsed || parsed.name !== "ListingCreated") continue;
+    events.push({
+      listingId: parsed.args.listingId as bigint,
+      seller: normalizeAddress(parsed.args.seller as string),
+      quantityKwh: parsed.args.quantityKwh as bigint,
+      pricePerKwh: parsed.args.pricePerKwh as bigint,
+    });
+  }
+  return events;
 }
 
 export function parseEnergyPurchasedLogs(

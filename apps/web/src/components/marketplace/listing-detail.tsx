@@ -93,6 +93,33 @@ export function ListingDetail({ listingId }: { listingId: string }) {
           <dt className="text-xs uppercase tracking-wide text-muted">Seller</dt>
           <dd className="mt-1">{listing.sellerDisplayName}</dd>
         </div>
+        {listing.onChainListingId && listing.onChainConfirmationStatus === "CONFIRMED" ? (
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-muted">On-chain listing id</dt>
+            <dd className="mt-1 font-mono text-sm">
+              {listing.onChainListingId}
+              {listing.explorerUrl ? (
+                <>
+                  {" "}
+                  ·{" "}
+                  <a className="underline" href={listing.explorerUrl} target="_blank" rel="noreferrer">
+                    Explorer
+                  </a>
+                </>
+              ) : null}
+            </dd>
+          </div>
+        ) : listing.onChainConfirmationStatus === "PENDING" ? (
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-muted">On-chain listing id</dt>
+            <dd className="mt-1 text-sm">Pending API verification</dd>
+          </div>
+        ) : listing.onChainConfirmationStatus === "FAILED" || listing.onChainConfirmationStatus === "REJECTED" ? (
+          <div>
+            <dt className="text-xs uppercase tracking-wide text-muted">On-chain listing id</dt>
+            <dd className="mt-1 text-sm">{listing.onChainConfirmationStatus.replaceAll("_", " ")}</dd>
+          </div>
+        ) : null}
       </dl>
 
       <Alert tone="info">

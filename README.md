@@ -10,7 +10,7 @@ Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Mark
 
 ## Current sprint
 
-**S11 — Docker/CI polish, production scripts, and demo path** is complete. Images, Compose, CI, and production start scripts are provider-agnostic. Next is hybrid on-chain listing id persistence (S12). See `docs/PROJECT_STATE.md`.
+**S12 — Hybrid DB sync / on-chain listing id persistence** is complete. A verified `ListingCreated` listingId is stored on the PostgreSQL Listing after API receipt/event checks. Wallet UI mined receipts are not confirmation. See `docs/PROJECT_STATE.md`.
 
 ## Architecture
 

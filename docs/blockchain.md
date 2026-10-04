@@ -26,7 +26,17 @@ Units: milli-kWh (`kWh * 1000`) and wei per milli-kWh. Network/RPC/address come 
 
 Frontend wallet states: `WAITING_FOR_SIGNATURE | PENDING | FAILED | REJECTED`. A mined wallet receipt stays `PENDING`.
 
-User rejection, RPC failure, and on-chain revert are distinct. The API sets DB `CONFIRMED` only after `POST /trades/report`:
+User rejection, RPC failure, and on-chain revert are distinct. The API persists `Listing.onChainListingId` only after `POST /listings/:id/on-chain`:
+
+1. Transaction receipt with success on the configured RPC
+2. Expected `ListingCreated` on the configured contract
+3. Seller wallet, quantity, price, and `externalId` match the off-chain listing
+4. Idempotency key / `txHash` uniqueness and unique on-chain listing id
+5. Chain id equals `CHAIN_ID`
+
+A missing receipt is stored as `PENDING` with no listing id. A revert or invalid event is `FAILED`. Wallet rejection is `REJECTED` and has no `txHash`.
+
+The API sets trade DB `CONFIRMED` only after `POST /trades/report`:
 
 1. Transaction receipt with success on the configured RPC
 2. Expected event (`EnergyPurchased` or `TradeSettled`) on the configured contract
@@ -40,4 +50,4 @@ Explorer URL is composed from `BLOCK_EXPLORER_URL` + `txHash`. No vendor is hard
 
 ## Keys
 
-Deployer keys stay in the operator environment (`DEPLOYER_PRIVATE_KEY` is optional and never committed), never in images, never in the Next.js bundle. Users sign with MetaMask. The API never stores or logs private keys. Wallet UI mined receipts are not `CONFIRMED` until `POST /trades/report` verifies the receipt and event.
+Deployer keys stay in the operator environment (`DEPLOYER_PRIVATE_KEY` is optional and never committed), never in images, never in the Next.js bundle. Users sign with MetaMask. The API never stores or logs private keys. Wallet UI mined receipts are not `CONFIRMED` until `POST /trades/report` or `POST /listings/:id/on-chain` verifies the receipt and event.

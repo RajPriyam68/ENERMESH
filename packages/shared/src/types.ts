@@ -74,6 +74,14 @@ export interface ListingPublic {
   availableFrom: string;
   availableUntil: string;
   status: ListingStatus;
+  onChainListingId?: string;
+  onChainTxHash?: string;
+  onChainContractAddress?: string;
+  onChainNetwork?: string;
+  onChainChainId?: number;
+  onChainBlockNumber?: number;
+  onChainConfirmationStatus?: BlockchainTxStatus;
+  explorerUrl?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -106,6 +114,7 @@ export interface MatchPublic {
   energyType: EnergyType;
   marketZone: string;
   listingLocation: string;
+  onChainListingId?: string;
   createdAt: string;
 }
 

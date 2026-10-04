@@ -1,6 +1,6 @@
 const EVENT_QUERY_KEYS: Record<string, string[][]> = {
   "listing:created": [["listings"], ["listing"], ["pricing"], ["analytics"]],
-  "listing:updated": [["listings"], ["listing"], ["pricing"], ["analytics"]],
+  "listing:updated": [["listings"], ["listing"], ["matches"], ["pricing"], ["analytics"]],
   "listing:expired": [["listings"], ["listing"], ["pricing"], ["analytics"]],
   "bid:created": [["bids"], ["bid"], ["listings"], ["pricing"], ["analytics"]],
   "bid:updated": [["bids"], ["bid"], ["pricing"], ["analytics"]],

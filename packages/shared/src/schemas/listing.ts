@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { EnergyType, ListingStatus } from "../enums.js";
 import { kwhSchema, moneySchema, paginationQuerySchema } from "./common.js";
+import { txHashSchema } from "./trade.js";
 
 const energyTypeEnum = z.enum([
   EnergyType.SOLAR,
@@ -124,6 +125,34 @@ export const listingFilterSchema = paginationQuerySchema
     }
   });
 
+export const onChainListingActionSchema = z.enum(["confirm", "reject"]);
+
+export const reportOnChainListingSchema = z
+  .object({
+    action: onChainListingActionSchema.default("confirm"),
+    txHash: txHashSchema.optional(),
+    idempotencyKey: z.string().trim().min(8).max(128),
+  })
+  .strict()
+  .superRefine((value, ctx) => {
+    if (value.action === "reject" && value.txHash) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["txHash"],
+        message: "Rejected listings cannot include a transaction hash",
+      });
+    }
+    if (value.action !== "reject" && !value.txHash) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["txHash"],
+        message: "txHash is required to confirm an on-chain listing",
+      });
+    }
+  });
+
 export type CreateListingInput = z.infer<typeof createListingSchema>;
 export type UpdateListingInput = z.infer<typeof updateListingSchema>;
 export type ListingFilter = z.infer<typeof listingFilterSchema>;
+export type ReportOnChainListingInput = z.infer<typeof reportOnChainListingSchema>;
+export type OnChainListingAction = z.infer<typeof onChainListingActionSchema>;

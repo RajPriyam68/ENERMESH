@@ -182,3 +182,9 @@ export function receiptFailed(receipt: RpcReceipt | null | undefined): boolean {
   const status = receipt.status;
   return status === 0 || status === "0x0" || status === "0";
 }
+
+export function explorerTxUrl(txHash: string | null | undefined): string | undefined {
+  if (!txHash) return undefined;
+  const hash = txHash.startsWith("0x") ? txHash : `0x${txHash}`;
+  return `${env.BLOCK_EXPLORER_URL.replace(/\/+$/, "")}/tx/${hash}`;
+}

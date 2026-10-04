@@ -1,8 +1,8 @@
 # EnerMesh project state
 
-Last updated: 2026-09-30
-Current sprint: **S11 Docker/CI polish, production scripts, demo path** — COMPLETE
-Next sprint: S12 Hybrid DB sync / on-chain listing id persistence (deferred polish). Do not start S12 in this sprint.
+Last updated: 2026-10-02
+Current sprint: **S12 Hybrid DB sync / on-chain listing id persistence** — COMPLETE
+Next sprint: none scheduled. Do not start a new sprint unless asked.
 
 ## Protocol
 
@@ -24,40 +24,38 @@ Before each sprint: read this file, inspect the repo, implement **only** the cur
 | S9 | Reports, admin, audit logs | COMPLETE |
 | S10 | Security, testing, performance | COMPLETE |
 | S11 | Docker/CI polish, production scripts, demo path | COMPLETE |
-| S12 | Hybrid DB sync / on-chain listing id persistence (deferred polish) | NOT STARTED |
+| S12 | Hybrid DB sync / on-chain listing id persistence | COMPLETE |
 
-## What exists after S11
+## What exists after S12
 
-Building on S10 (headers, CORS, cookies, rate limits, validation, generic 500s, audit index):
+Building on S11 (Docker, production scripts, CI):
 
-- **Docker** — Node 22 Alpine multi-stage images. `npm ci`. Shared package built before API/web. Non-root `enermesh`. `.dockerignore` excludes `.env` and secrets. API HEALTHCHECK uses `/api/v1/ready`. Web HEALTHCHECK hits `/`. Compose: Postgres 16, API, web; API entrypoint runs `prisma migrate deploy` then `node dist/index.js`.
-- **Production scripts** — `scripts/start-api-prod.sh` (migrate + start), `scripts/start-web-prod.sh`. Workspace `start:api`, `start:web`, `start:prod:api`, `db:deploy` via Prisma in `apps/api`.
-- **Shutdown** — API handles SIGTERM/SIGINT: close Socket.IO, HTTP, Prisma.
-- **CI** — Node 22, npm cache, shared build, `db:deploy` against Postgres 16, typecheck, lint, tests, production build, Hardhat tests (`npm run contracts:test`), Compose config, Docker build-push with `push: false`. No deploy credentials.
-- **Socket URL** — `resolveSocketUrl` keeps same-origin rewrites unless `NEXT_PUBLIC_SOCKET_URL` is an absolute http(s) origin.
-- **Env** — `.env.example` documents required/optional production variables including Compose Postgres, `RUN_MIGRATIONS`, `API_INTERNAL_URL`, optional `DEPLOYER_PRIVATE_KEY` (never committed).
+- **Listing mapping** — Unique `onChainListingId`, `onChainTxHash`, and `onChainIdempotencyKey` on `Listing`, plus contract/network/chain/block/confirmation metadata.
+- **Verification** — `POST /listings/:id/on-chain` reuses S4 RPC helpers. CONFIRMED listing ids come only from a successful receipt and `ListingCreated` on the configured contract. Quantity, price, seller wallet, and `externalId` (listing UUID) must match. Missing receipt is PENDING with no id. Revert/invalid event is FAILED. Wallet reject is REJECTED.
+- **API surface** — ListingPublic and MatchPublic expose the persisted id and explorer URL when confirmed. RBAC: seller owner or ADMIN.
+- **Web** — Publish listing reports the txHash to the API. UI shows persisted id, explorer, pending, and error. Purchase uses the API id when present. Wallet mined receipts stay PENDING.
 
-## Validation (S11)
+## Validation (S12)
 
-- `npm run typecheck` — pass
-- `npm run lint` — pass (pre-existing Solidity `gas-custom-errors` warnings only)
-- `npm run test` — pass (API 105, web 41, shared 44)
-- `npm run build` — pass
+- `npm run typecheck` — passed
+- `npm run lint` — passed (existing solhint warnings in contracts)
+- `npm run test` — passed (API 122, web 42, shared 47)
+- `npm run build` — passed (shared, api, web, contracts)
 - `npx hardhat test` in `packages/contracts` — 12 passing
-- Docker CLI is not installed in this workspace, so image builds were not run here. CI is configured to run `docker compose config` and `docker/build-push-action` with `push: false`.
+- Docker CLI is not installed in this workspace, so image builds were not run here.
 
-S11 tests added:
+S12 tests added:
 
-- API: readiness `/ready` (200 connected or 503 `NOT_READY`); HTTP shutdown close + idempotent close
-- Web: `resolveSocketUrl` same-origin vs absolute http(s)
-- Production secrets: empty `WEB_ORIGIN` rejected
+- API: persist verified ListingCreated id; idempotent confirm; duplicate id/tx; wrong chain/contract/wallet; missing event; other listing; revert; concurrent confirm; ownership
+- API: ListingCreated event parsing only from the configured contract
+- S4 settlement tests remain
 
-## Explicitly out of S11
+## Explicitly out of S12
 
-- Persisting on-chain listing ids on the Listing row (S12)
-- Real production deployment to Vercel/Render/Railway/AWS/Azure/GCP/Fly.io
+- Solidity changes (ListingCreated already emits listingId)
+- Treating wallet UI mined receipts as CONFIRMED
 - Fabricated marketplace volume or settlement results
-- Treating wallet UI mined receipts as `CONFIRMED`
+- Real production deployment to Vercel/Render/Railway/AWS/Azure/GCP/Fly.io
 
 ## Known environment notes
 
@@ -66,7 +64,7 @@ S11 tests added:
 - Readiness (`/ready`) reports degraded if Postgres is down; liveness (`/health`) still returns 200
 - Tailwind CSS 3 is used (v4 native oxide crashed SIGBUS in this environment)
 - Shared package must be built (`npm run build -w packages/shared`) before API/web typecheck against `dist`.
-- Settlement tests mock JSON-RPC; they do not call a live chain.
+- Settlement and listing-chain tests mock JSON-RPC; they do not call a live chain.
 - AI tests do not call a live LLM. They assert the unconfigured fallback path.
 - IoT tests do not connect MQTT. They assert labelled HTTP/simulated EnergyHistory rows.
 - Rate limiters skip when `NODE_ENV === "test"` so S0–S9 HTTP tests stay deterministic. Limiter 429 is asserted in `security.test.ts` with `skip: () => false`.

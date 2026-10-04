@@ -25,6 +25,7 @@ EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**
   10. Reports, admin users, and audit logs (S9) read Prisma rows. ADMIN-only. Empty marketplace volume stays labelled 0.
   11. Security hardening (S10) covers headers, CORS, cookies, rate limits, Zod params, production secrets, and generic 500s. REST remains the source of truth.
   12. Docker/CI (S11) packages API and web as Node 22 images with migrations, healthchecks, and graceful shutdown. No vendor is hardcoded.
+  13. Hybrid listing sync (S12) copies a verified ListingCreated listingId onto the PostgreSQL Listing only after API receipt/event checks.
 
 ## Trust boundaries
 
@@ -40,7 +41,7 @@ EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**
 
 PostgreSQL stores dynamic marketplace data and blockchain metadata (`txHash`, `blockNumber`, confirmation status).
 
-On-chain fields: trade/listing ID, seller/buyer wallets, quantity, price, timestamp. The API copies verified `txHash`, `blockNumber`, contract, and network onto `Trade`.
+On-chain fields: trade/listing ID, seller/buyer wallets, quantity, price, timestamp. The API copies verified `txHash`, `blockNumber`, contract, and network onto `Trade`, and a verified `ListingCreated` listingId plus the same metadata onto `Listing`.
 
 ## Environments
 

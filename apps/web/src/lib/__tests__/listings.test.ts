@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { toSearchParams } from "../listings";
+import { listingIdempotencyKey, toSearchParams } from "../listings";
 
 describe("toSearchParams", () => {
   it("omits empty filters", () => {
@@ -21,5 +21,12 @@ describe("toSearchParams", () => {
     assert.equal(params.get("page"), "2");
     assert.equal(params.get("energyType"), "SOLAR");
     assert.equal(params.get("sortBy"), "pricePerKwh");
+  });
+});
+
+describe("listing on-chain idempotency", () => {
+  it("generates a key of at least 8 characters", () => {
+    const key = listingIdempotencyKey("11111111-1111-1111-1111-111111111111", "confirm");
+    assert.equal(key.length >= 8, true);
   });
 });

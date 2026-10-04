@@ -17,7 +17,7 @@ describe("health routes", () => {
     assert.equal(res.status, 200);
     assert.equal(body.success, true);
     assert.equal(body.data.status, "ok");
-    assert.equal(body.data.sprint, "S11");
+    assert.equal(body.data.sprint, "S12");
     assert.equal(body.data.service, "enermesh-api");
   });
 
@@ -37,7 +37,7 @@ describe("health routes", () => {
       assert.equal(body.success, true);
       assert.equal(body.data?.status, "ok");
       assert.equal(body.data?.database, "connected");
-      assert.equal(body.data?.sprint, "S11");
+      assert.equal(body.data?.sprint, "S12");
     } else {
       assert.equal(res.status, 503);
       assert.equal(body.error?.code, "NOT_READY");

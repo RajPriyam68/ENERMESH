@@ -5,6 +5,7 @@ import { env } from "../config/env.js";
 import { recordAudit } from "../lib/audit.js";
 import {
   configuredContractAddress,
+  explorerTxUrl,
   getChainRpc,
   parseHexBigInt,
   parseHexNumber,
@@ -25,7 +26,7 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { emitMatchUpdated, emitTradeEvent } from "../socket/index.js";
-import { decimalNumber, toPublicMatch } from "./matching.service.js";
+import { decimalNumber, matchListingSelect, toPublicMatch } from "./matching.service.js";
 import { createNotification } from "./notification.service.js";
 
 const TERMINAL_MATCH = new Set(["REJECTED", "EXPIRED", "SETTLED", "FAILED"]);
@@ -35,12 +36,6 @@ type MatchRow = Match & {
   listing: { status: string; availableUntil: Date };
   bid: { status: string; requiredUntil: Date };
 };
-
-export function explorerTxUrl(txHash: string | null | undefined): string | undefined {
-  if (!txHash) return undefined;
-  const hash = txHash.startsWith("0x") ? txHash : `0x${txHash}`;
-  return `${env.BLOCK_EXPLORER_URL.replace(/\/+$/, "")}/tx/${hash}`;
-}
 
 export function toPublicTrade(trade: Trade): TradePublic {
   return {
@@ -243,7 +238,7 @@ async function notifyTrade(match: Match, trade: TradePublic, action: ReportTrade
   emitTradeEvent(trade);
   const loaded = await prisma.match.findUnique({
     where: { id: match.id },
-    include: { listing: { select: { energyType: true, marketZone: true, location: true } } },
+    include: { listing: { select: matchListingSelect } },
   });
   if (loaded) emitMatchUpdated(toPublicMatch(loaded));
 

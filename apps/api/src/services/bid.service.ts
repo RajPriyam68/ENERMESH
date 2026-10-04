@@ -4,7 +4,7 @@ import { recordAudit } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { emitBidExpired, emitBidUpdated } from "../socket/index.js";
-import { toPublicBid, toPublicMatch } from "./matching.service.js";
+import { matchListingSelect, toPublicBid, toPublicMatch } from "./matching.service.js";
 import { createNotification } from "./notification.service.js";
 
 const BID_SORT: Record<string, keyof Bid> = {
@@ -130,7 +130,7 @@ export async function listMatches(
     prisma.match.count({ where }),
     prisma.match.findMany({
       where,
-      include: { listing: { select: { energyType: true, marketZone: true, location: true } } },
+      include: { listing: { select: matchListingSelect } },
       orderBy: { [sortBy]: filter.sortOrder },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -152,7 +152,7 @@ export async function getMatchById(
 ): Promise<MatchPublic> {
   const match = await prisma.match.findUnique({
     where: { id },
-    include: { listing: { select: { energyType: true, marketZone: true, location: true } } },
+    include: { listing: { select: matchListingSelect } },
   });
   if (!match) throw new HttpError(404, "MATCH_NOT_FOUND", "Match not found");
   if (actor.role !== "ADMIN" && match.buyerId !== actor.id && match.sellerId !== actor.id) {

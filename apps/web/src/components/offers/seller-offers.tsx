@@ -89,6 +89,13 @@ export function SellerOffers() {
                 {formatKwh(listing.availableQuantityKwh)} remaining · {formatKwh(listing.soldQuantityKwh)} sold
               </p>
               <p className="text-xs text-muted">{formatWindow(listing.availableFrom, listing.availableUntil)}</p>
+              {listing.onChainListingId && listing.onChainConfirmationStatus === "CONFIRMED" ? (
+                <p className="mt-1 text-xs text-muted">On-chain listing id {listing.onChainListingId}</p>
+              ) : listing.onChainConfirmationStatus === "PENDING" ? (
+                <p className="mt-1 text-xs text-muted">On-chain listing id pending API verification</p>
+              ) : listing.onChainConfirmationStatus === "FAILED" || listing.onChainConfirmationStatus === "REJECTED" ? (
+                <p className="mt-1 text-xs text-muted">On-chain listing {listing.onChainConfirmationStatus.toLowerCase()}</p>
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" asChild>
                   <Link href={`/marketplace/${listing.id}`}>View</Link>
