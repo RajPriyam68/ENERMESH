@@ -133,6 +133,8 @@ export interface TradePublic {
   contractAddress?: string;
   network?: string;
   explorerUrl?: string;
+  onChainListingId?: string;
+  onChainTradeId?: string;
 }
 
 export interface PriceRecommendation {

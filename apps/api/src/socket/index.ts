@@ -217,6 +217,10 @@ export function createSocketServer(httpServer: HttpServer) {
     socket.onAny(() => {
       // Ignore client-originated events. Privileged state is server-authored.
     });
+
+    socket.on("disconnect", () => {
+      socket.data.user = undefined;
+    });
   });
 
   return io;

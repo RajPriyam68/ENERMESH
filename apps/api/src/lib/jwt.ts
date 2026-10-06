@@ -15,7 +15,7 @@ export interface RefreshTokenPayload extends JwtPayload {
 }
 
 function signOptions(expiresIn: string): SignOptions {
-  return { expiresIn: expiresIn as SignOptions["expiresIn"] };
+  return { algorithm: "HS256", expiresIn: expiresIn as SignOptions["expiresIn"] };
 }
 
 export function signAccessToken(input: { userId: string; email: string; role: string }): string {
@@ -35,7 +35,7 @@ export function signRefreshToken(input: { userId: string; tokenId: string }): st
 }
 
 function verify<T extends JwtPayload>(token: string, secret: string, type: string): T {
-  const decoded = jwt.verify(token, secret) as JwtPayload;
+  const decoded = jwt.verify(token, secret, { algorithms: ["HS256"] }) as JwtPayload;
   if (decoded.type !== type) {
     throw new Error("Unexpected token type");
   }

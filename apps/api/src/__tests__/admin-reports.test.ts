@@ -202,11 +202,11 @@ describe("admin and reports", { skip: !dbReady }, () => {
     assert.equal(ingest.status, 201);
 
     const telemetry = await api<{
-      report: { sampleCount: number; totalKwh: { value: number }; bySourceLabel: { ACTUAL: { totalKwh: number } } };
+      report: { sampleCount: number; totalKwh: { value: number }; bySourceLabel: { ESTIMATED: { totalKwh: number } } };
     }>(server.baseUrl, "/reports/telemetry", { token: admin.token });
     assert.equal(telemetry.status, 200);
     assert.equal(telemetry.body.data!.report.sampleCount >= 1, true);
-    assert.equal(telemetry.body.data!.report.bySourceLabel.ACTUAL.totalKwh >= 4, true);
+    assert.equal(telemetry.body.data!.report.bySourceLabel.ESTIMATED.totalKwh >= 4, true);
 
     const marketplace = await api<{
       report: { analytics: { energyTradedKwh: { value: number } }; counts: { confirmedTrades: number } };

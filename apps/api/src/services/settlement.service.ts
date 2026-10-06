@@ -24,6 +24,7 @@ import {
   toMilliKwh,
 } from "../lib/marketplace-events.js";
 import { prisma } from "../lib/prisma.js";
+import { lockListings, lockMatches, withSerializableRetry } from "../lib/serializable.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { emitMatchUpdated, emitTradeEvent } from "../socket/index.js";
 import { decimalNumber, matchListingSelect, toPublicMatch } from "./matching.service.js";
@@ -33,7 +34,7 @@ const TERMINAL_MATCH = new Set(["REJECTED", "EXPIRED", "SETTLED", "FAILED"]);
 const TERMINAL_TRADE = new Set(["CONFIRMED", "COMPLETED", "FAILED", "REJECTED"]);
 
 type MatchRow = Match & {
-  listing: { status: string; availableUntil: Date };
+  listing: { status: string; availableUntil: Date; onChainListingId: string | null };
   bid: { status: string; requiredUntil: Date };
 };
 
@@ -53,6 +54,8 @@ export function toPublicTrade(trade: Trade): TradePublic {
     contractAddress: trade.contractAddress ?? undefined,
     network: trade.network ?? undefined,
     explorerUrl: explorerTxUrl(trade.txHash),
+    onChainListingId: trade.onChainListingId ?? undefined,
+    onChainTradeId: trade.onChainTradeId ?? undefined,
   };
 }
 
@@ -72,7 +75,7 @@ async function loadMatch(matchId: string): Promise<MatchRow> {
   const match = await prisma.match.findUnique({
     where: { id: matchId },
     include: {
-      listing: { select: { status: true, availableUntil: true } },
+      listing: { select: { status: true, availableUntil: true, onChainListingId: true } },
       bid: { select: { status: true, requiredUntil: true } },
     },
   });
@@ -165,6 +168,8 @@ interface TradeWrite {
   gasUsed?: string | null;
   settledAt?: Date | null;
   txHash?: string | null;
+  onChainListingId?: string | null;
+  onChainTradeId?: string | null;
 }
 
 async function persistTrade(
@@ -172,6 +177,7 @@ async function persistTrade(
   input: ReportTradeInput,
   data: TradeWrite,
   existing: Trade | null,
+  db: Prisma.TransactionClient | typeof prisma = prisma,
 ): Promise<Trade> {
   const quantityKwh = decimalNumber(match.matchedKwh);
   const pricePerKwh = decimalNumber(match.pricePerKwh);
@@ -180,7 +186,7 @@ async function persistTrade(
 
   try {
     if (existing) {
-      return await prisma.trade.update({
+      return await db.trade.update({
         where: { id: existing.id },
         data: {
           status: data.status,
@@ -193,10 +199,12 @@ async function persistTrade(
           gasUsed: data.gasUsed ?? existing.gasUsed,
           settledAt: data.settledAt ?? existing.settledAt,
           txHash: txHash ?? existing.txHash,
+          onChainListingId: data.onChainListingId ?? existing.onChainListingId,
+          onChainTradeId: data.onChainTradeId ?? existing.onChainTradeId,
         },
       });
     }
-    return await prisma.trade.create({
+    return await db.trade.create({
       data: {
         matchId: match.id,
         buyerId: match.buyerId,
@@ -215,10 +223,15 @@ async function persistTrade(
         gasUsed: data.gasUsed ?? null,
         confirmationStatus: data.confirmationStatus ?? input.action,
         settledAt: data.settledAt ?? null,
+        onChainListingId: data.onChainListingId ?? null,
+        onChainTradeId: data.onChainTradeId ?? null,
       },
     });
   } catch (error) {
     if (!isUniqueViolation(error)) throw error;
+    if (db !== prisma) {
+      throw new HttpError(409, "DUPLICATE_TX", "This transaction or idempotency key was already used");
+    }
     const duplicate = await prisma.trade.findFirst({
       where: {
         OR: [
@@ -328,22 +341,35 @@ function assertSuccessfulReceipt(receipt: RpcReceipt, contract: string) {
   }
 }
 
+function expectedOnChainListingId(listing: { onChainListingId: string | null }): bigint {
+  if (!listing.onChainListingId) {
+    failVerification("LISTING_NOT_MAPPED", "Listing must be confirmed on-chain before purchase");
+  }
+  try {
+    return BigInt(listing.onChainListingId);
+  } catch {
+    failVerification("LISTING_NOT_MAPPED", "Listing on-chain id is invalid");
+  }
+}
+
 function verifyPurchase(
   receipt: RpcReceipt,
   tx: RpcTransaction,
-  match: Match,
+  match: MatchRow,
   contract: string,
   buyerWallets: string[],
-) {
+): { onChainListingId: string; onChainTradeId: string } {
   assertSuccessfulReceipt(receipt, contract);
   if (!senderAllowed(tx.from, buyerWallets)) {
     failVerification("WRONG_WALLET", "Transaction sender is not the buyer's verified wallet");
   }
+  const expectedListingId = expectedOnChainListingId(match.listing);
   const events = parseEnergyPurchasedLogs(receipt, contract);
   const expectedQty = toMilliKwh(decimalNumber(match.matchedKwh));
   const expectedPaid = purchaseValueWei(expectedQty, priceToWeiPerMilliKwh(decimalNumber(match.pricePerKwh)));
   const matched = events.find(
     (event) =>
+      event.listingId === expectedListingId &&
       event.quantityKwh === expectedQty &&
       event.totalPaid === expectedPaid &&
       senderAllowed(event.buyer, buyerWallets),
@@ -351,6 +377,9 @@ function verifyPurchase(
   if (!matched) {
     if (events.length === 0) failVerification("INVALID_EVENT", "Receipt is missing EnergyPurchased from the marketplace");
     const event = events[0]!;
+    if (event.listingId !== expectedListingId) {
+      failVerification("LISTING_MISMATCH", "On-chain listing id does not match the mapped listing");
+    }
     if (event.quantityKwh !== expectedQty) {
       failVerification("QUANTITY_MISMATCH", "On-chain quantity does not match the intended trade");
     }
@@ -362,25 +391,40 @@ function verifyPurchase(
   if (parseHexBigInt(tx.value) !== expectedPaid) {
     failVerification("PAYMENT_MISMATCH", "Transaction value does not match the intended payment");
   }
+  return {
+    onChainListingId: matched.listingId.toString(),
+    onChainTradeId: matched.tradeId.toString(),
+  };
 }
 
 function verifySettle(
   receipt: RpcReceipt,
   tx: RpcTransaction,
-  match: Match,
+  match: MatchRow,
   contract: string,
   buyerWallets: string[],
   sellerWallets: string[],
-) {
+  expectedTradeId: string | null,
+): { onChainTradeId: string } {
   assertSuccessfulReceipt(receipt, contract);
   const allowedSenders = [...buyerWallets, ...sellerWallets];
   if (!senderAllowed(tx.from, allowedSenders)) {
     failVerification("WRONG_WALLET", "Transaction sender is not a participant wallet");
   }
+  if (!expectedTradeId) {
+    failVerification("TRADE_NOT_MAPPED", "Purchase must persist an on-chain trade id before settle");
+  }
+  let expectedId: bigint;
+  try {
+    expectedId = BigInt(expectedTradeId);
+  } catch {
+    failVerification("TRADE_NOT_MAPPED", "On-chain trade id is invalid");
+  }
   const events = parseTradeSettledLogs(receipt, contract);
   const expectedQty = toMilliKwh(decimalNumber(match.matchedKwh));
   const matched = events.find(
     (event) =>
+      event.tradeId === expectedId &&
       event.quantityKwh === expectedQty &&
       senderAllowed(event.buyer, buyerWallets) &&
       senderAllowed(event.seller, sellerWallets),
@@ -388,11 +432,15 @@ function verifySettle(
   if (!matched) {
     if (events.length === 0) failVerification("INVALID_EVENT", "Receipt is missing TradeSettled from the marketplace");
     const event = events[0]!;
+    if (event.tradeId !== expectedId) {
+      failVerification("TRADE_MISMATCH", "On-chain trade id does not match the verified purchase");
+    }
     if (event.quantityKwh !== expectedQty) {
       failVerification("QUANTITY_MISMATCH", "On-chain quantity does not match the intended trade");
     }
     failVerification("WRONG_WALLET", "TradeSettled wallets do not match the verified participants");
   }
+  return { onChainTradeId: matched.tradeId.toString() };
 }
 
 async function markFailed(
@@ -462,8 +510,9 @@ export async function reportTrade(
   if (!txHash) {
     throw new HttpError(422, "VALIDATION_ERROR", "txHash is required");
   }
+  let confirmedPurchase: Trade | null = null;
   if (input.action === "settle") {
-    const confirmedPurchase = await prisma.trade.findFirst({
+    confirmedPurchase = await prisma.trade.findFirst({
       where: { matchId: match.id, status: "CONFIRMED", blockchainTxStatus: "CONFIRMED" },
     });
     if (!confirmedPurchase) {
@@ -513,6 +562,14 @@ export async function reportTrade(
     return publicTrade;
   }
 
+  if (receipt.transactionHash && normalizeTxHash(receipt.transactionHash) !== txHash) {
+    const error = new HttpError(409, "TX_HASH_MISMATCH", "Receipt hash does not match the reported transaction");
+    const trade = await markFailed(match, input, existing, error);
+    const publicTrade = toPublicTrade(trade);
+    await notifyTrade(match, publicTrade, input.action);
+    throw new HttpError(error.status, error.code, error.message, { trade: publicTrade });
+  }
+
   const extras: Partial<TradeWrite> = {
     blockNumber: parseHexNumber(receipt.blockNumber),
     gasUsed: receipt.gasUsed === null || receipt.gasUsed === undefined ? null : String(parseHexNumber(receipt.gasUsed) ?? receipt.gasUsed),
@@ -547,10 +604,29 @@ export async function reportTrade(
     await notifyTrade(match, publicTrade, input.action);
     throw new HttpError(error.status, error.code, error.message, { trade: publicTrade });
   }
+  if (tx.hash && normalizeTxHash(tx.hash) !== txHash) {
+    const error = new HttpError(409, "TX_HASH_MISMATCH", "Transaction hash does not match the reported hash");
+    const trade = await markFailed(match, input, existing, error, extras);
+    const publicTrade = toPublicTrade(trade);
+    await notifyTrade(match, publicTrade, input.action);
+    throw new HttpError(error.status, error.code, error.message, { trade: publicTrade });
+  }
 
+  let mapped: { onChainListingId?: string; onChainTradeId?: string } = {};
   try {
-    if (input.action === "purchase") verifyPurchase(receipt, tx, match, contract, buyerWallets);
-    else verifySettle(receipt, tx, match, contract, buyerWallets, sellerWallets);
+    if (input.action === "purchase") {
+      mapped = verifyPurchase(receipt, tx, match, contract, buyerWallets);
+    } else {
+      mapped = verifySettle(
+        receipt,
+        tx,
+        match,
+        contract,
+        buyerWallets,
+        sellerWallets,
+        confirmedPurchase?.onChainTradeId ?? null,
+      );
+    }
   } catch (error) {
     if (error instanceof HttpError) {
       const trade = await markFailed(match, input, existing, error, extras);
@@ -561,18 +637,34 @@ export async function reportTrade(
     throw error;
   }
 
-  const confirmed = await persistTrade(
-    match,
-    input,
-    {
-      status: input.action === "settle" ? "COMPLETED" : "CONFIRMED",
-      blockchainTxStatus: "CONFIRMED",
-      confirmationStatus: input.action,
-      settledAt: input.action === "settle" ? new Date() : null,
-      ...extras,
-    },
-    existing,
-  );
+  const confirmed = await withSerializableRetry(async (txClient) => {
+    await lockMatches(txClient, [match.id]);
+    await lockListings(txClient, [match.listingId]);
+    const liveListing = await txClient.listing.findUnique({
+      where: { id: match.listingId },
+      select: { onChainListingId: true },
+    });
+    if (input.action === "purchase") {
+      if (!liveListing?.onChainListingId || liveListing.onChainListingId !== mapped.onChainListingId) {
+        throw new HttpError(409, "LISTING_MISMATCH", "On-chain listing id does not match the mapped listing");
+      }
+    }
+    return persistTrade(
+      match,
+      input,
+      {
+        status: input.action === "settle" ? "COMPLETED" : "CONFIRMED",
+        blockchainTxStatus: "CONFIRMED",
+        confirmationStatus: input.action,
+        settledAt: input.action === "settle" ? new Date() : null,
+        onChainListingId: mapped.onChainListingId ?? confirmedPurchase?.onChainListingId ?? null,
+        onChainTradeId: mapped.onChainTradeId ?? confirmedPurchase?.onChainTradeId ?? null,
+        ...extras,
+      },
+      existing,
+      txClient,
+    );
+  });
   await syncMatch(match.id, input.action, confirmed);
   if (input.action === "settle") {
     await recordAudit({

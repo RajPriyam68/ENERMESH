@@ -28,6 +28,10 @@ describe("jwt service", () => {
     assert.equal(payload.email, "a@b.test");
     assert.equal(payload.role, "BUYER");
     assert.equal(payload.type, "access");
+    const [header] = token.split(".");
+    assert.ok(header);
+    const alg = JSON.parse(Buffer.from(header, "base64url").toString("utf8")) as { alg?: string };
+    assert.equal(alg.alg, "HS256");
   });
 
   it("rejects an access token presented as a refresh token", () => {
@@ -201,6 +205,16 @@ describe("auth integration", { skip: !dbReady }, () => {
       body: JSON.stringify({}),
     });
     assert.equal(replay.status, 401);
+
+    const rotated = first.setCookie.find((c) => c.startsWith("enermesh_refresh="))?.split(";")[0];
+    if (rotated) {
+      const afterReuse = await api(server.baseUrl, "/auth/refresh", {
+        method: "POST",
+        cookie: rotated,
+        body: JSON.stringify({}),
+      });
+      assert.equal(afterReuse.status, 401);
+    }
   });
 
   it("requires a refresh token when none is supplied", async () => {

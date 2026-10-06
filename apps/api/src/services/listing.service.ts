@@ -16,6 +16,7 @@ import {
 import { recordAudit } from "../lib/audit.js";
 import { explorerTxUrl } from "../lib/chain-rpc.js";
 import { prisma } from "../lib/prisma.js";
+import { lockListings, withSerializableRetry } from "../lib/serializable.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import { createNotification } from "./notification.service.js";
 import { emitListingCreated, emitListingExpired, emitListingUpdated } from "../socket/index.js";
@@ -291,23 +292,6 @@ export async function updateListing(
     throw new HttpError(409, "LISTING_NOT_EDITABLE", `A ${current.status} listing cannot be edited`);
   }
 
-  const sold = decimalNumber(current.soldQuantityKwh);
-  const nextAvailable =
-    input.availableKwh !== undefined ? roundKwh(input.availableKwh) : decimalNumber(current.availableQuantityKwh);
-  const quantities = resizeRemaining(
-    {
-      originalQuantityKwh: decimalNumber(current.originalQuantityKwh),
-      availableQuantityKwh: decimalNumber(current.availableQuantityKwh),
-      soldQuantityKwh: sold,
-    },
-    nextAvailable,
-  );
-  assertQuantity(quantities);
-
-  const minTrade = roundKwh(input.minTradeKwh ?? decimalNumber(current.minTradeKwh));
-  const maxTrade = roundKwh(input.maxTradeKwh ?? decimalNumber(current.maxTradeKwh));
-  assertTradeSizes(quantities.availableQuantityKwh, minTrade, maxTrade);
-
   const availableFrom = input.availableFrom ?? current.availableFrom;
   const availableUntil = input.availableUntil ?? current.availableUntil;
   if (availableUntil <= availableFrom) {
@@ -317,21 +301,52 @@ export async function updateListing(
     throw new HttpError(422, "WINDOW_IN_PAST", "availableUntil must be in the future");
   }
 
-  const updated = await prisma.listing.update({
-    where: { id: listingId },
-    data: {
-      energyType: input.energyType,
-      originalQuantityKwh: quantities.originalQuantityKwh,
-      availableQuantityKwh: quantities.availableQuantityKwh,
-      minTradeKwh: minTrade,
-      maxTradeKwh: maxTrade,
-      pricePerKwh: input.pricePerKwh !== undefined ? roundPrice(input.pricePerKwh) : undefined,
-      location: input.location?.trim(),
-      marketZone: input.marketZone?.trim(),
-      availableFrom,
-      availableUntil,
-    },
-    include: listingInclude,
+  const updated = await withSerializableRetry(async (tx) => {
+    await lockListings(tx, [listingId]);
+    const locked = await tx.listing.findUnique({
+      where: { id: listingId },
+      include: listingInclude,
+    });
+    if (!locked) {
+      throw new HttpError(404, "LISTING_NOT_FOUND", "Listing not found");
+    }
+    if (!EDITABLE_STATUSES.includes(locked.status)) {
+      throw new HttpError(409, "LISTING_NOT_EDITABLE", `A ${locked.status} listing cannot be edited`);
+    }
+
+    const sold = decimalNumber(locked.soldQuantityKwh);
+    const nextAvailable =
+      input.availableKwh !== undefined ? roundKwh(input.availableKwh) : decimalNumber(locked.availableQuantityKwh);
+    const quantities = resizeRemaining(
+      {
+        originalQuantityKwh: decimalNumber(locked.originalQuantityKwh),
+        availableQuantityKwh: decimalNumber(locked.availableQuantityKwh),
+        soldQuantityKwh: sold,
+      },
+      nextAvailable,
+    );
+    assertQuantity(quantities);
+
+    const minTrade = roundKwh(input.minTradeKwh ?? decimalNumber(locked.minTradeKwh));
+    const maxTrade = roundKwh(input.maxTradeKwh ?? decimalNumber(locked.maxTradeKwh));
+    assertTradeSizes(quantities.availableQuantityKwh, minTrade, maxTrade);
+
+    return tx.listing.update({
+      where: { id: listingId },
+      data: {
+        energyType: input.energyType,
+        originalQuantityKwh: quantities.originalQuantityKwh,
+        availableQuantityKwh: quantities.availableQuantityKwh,
+        minTradeKwh: minTrade,
+        maxTradeKwh: maxTrade,
+        pricePerKwh: input.pricePerKwh !== undefined ? roundPrice(input.pricePerKwh) : undefined,
+        location: input.location?.trim(),
+        marketZone: input.marketZone?.trim(),
+        availableFrom,
+        availableUntil,
+      },
+      include: listingInclude,
+    });
   });
 
   await recordAudit({
@@ -377,10 +392,23 @@ export async function cancelListing(
     throw new HttpError(409, "LISTING_NOT_CANCELLABLE", `A ${current.status} listing cannot be cancelled`);
   }
 
-  const cancelled = await prisma.listing.update({
-    where: { id: listingId },
-    data: { status: "CANCELLED" },
-    include: listingInclude,
+  const cancelled = await withSerializableRetry(async (tx) => {
+    await lockListings(tx, [listingId]);
+    const locked = await tx.listing.findUnique({
+      where: { id: listingId },
+      include: listingInclude,
+    });
+    if (!locked) {
+      throw new HttpError(404, "LISTING_NOT_FOUND", "Listing not found");
+    }
+    if (!EDITABLE_STATUSES.includes(locked.status)) {
+      throw new HttpError(409, "LISTING_NOT_CANCELLABLE", `A ${locked.status} listing cannot be cancelled`);
+    }
+    return tx.listing.update({
+      where: { id: listingId },
+      data: { status: "CANCELLED" },
+      include: listingInclude,
+    });
   });
 
   await recordAudit({

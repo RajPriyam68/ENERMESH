@@ -94,6 +94,8 @@ async function verifyWallet(token: string) {
   return wallet;
 }
 
+let nextOnChainListingId = 1n;
+
 async function createMatchedTrade() {
   const seller = await register("SELLER");
   const buyer = await register("BUYER");
@@ -115,6 +117,12 @@ async function createMatchedTrade() {
     }),
   });
   assert.equal(listingRes.status, 201);
+  const onChainListingId = nextOnChainListingId;
+  nextOnChainListingId += 1n;
+  await prisma.listing.update({
+    where: { id: listingRes.body.data!.listing.id },
+    data: { onChainListingId: onChainListingId.toString(), onChainConfirmationStatus: "CONFIRMED" },
+  });
   const bidRes = await api<{ bid: { id: string }; matches: Array<{ id: string; matchedKwh: number; pricePerKwh: number }> }>(
     server.baseUrl,
     "/bids",
@@ -134,17 +142,25 @@ async function createMatchedTrade() {
   );
   assert.equal(bidRes.status, 201);
   const match = bidRes.body.data!.matches[0]!;
-  return { seller, buyer, sellerWallet, buyerWallet, match, listingId: listingRes.body.data!.listing.id };
+  return {
+    seller,
+    buyer,
+    sellerWallet,
+    buyerWallet,
+    match,
+    listingId: listingRes.body.data!.listing.id,
+    onChainListingId,
+  };
 }
 
 function hash(n: number): string {
   return `0x${n.toString(16).padStart(64, "0")}`;
 }
 
-function encodePurchaseLog(buyer: string, quantityKwh: bigint, totalPaid: bigint) {
+function encodePurchaseLog(buyer: string, quantityKwh: bigint, totalPaid: bigint, listingId = 1n, tradeId = 1n) {
   return marketplaceInterface.encodeEventLog(marketplaceInterface.getEvent("EnergyPurchased")!, [
-    1n,
-    1n,
+    listingId,
+    tradeId,
     buyer,
     quantityKwh,
     totalPaid,
@@ -162,9 +178,23 @@ function amounts() {
   return { quantity, price, value };
 }
 
-function putPurchase(txHash: string, from: string, options: { pending?: boolean; revert?: boolean; log?: ReturnType<typeof encodePurchaseLog>; value?: bigint; to?: string } = {}) {
+function putPurchase(
+  txHash: string,
+  from: string,
+  options: {
+    pending?: boolean;
+    revert?: boolean;
+    log?: ReturnType<typeof encodePurchaseLog>;
+    value?: bigint;
+    to?: string;
+    listingId?: bigint;
+    tradeId?: bigint;
+  } = {},
+) {
   const { quantity, value } = amounts();
-  const encoded = options.log ?? encodePurchaseLog(from, quantity, options.value ?? value);
+  const encoded =
+    options.log ??
+    encodePurchaseLog(from, quantity, options.value ?? value, options.listingId ?? 1n, options.tradeId ?? 1n);
   const tx: RpcTransaction = {
     hash: txHash,
     from,
@@ -245,7 +275,7 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
   });
 
   it("allows a purchase after the same idempotency key was used for a wallet reject", async () => {
-    const { buyer, buyerWallet, match } = await createMatchedTrade();
+    const { buyer, buyerWallet, match, onChainListingId } = await createMatchedTrade();
     const rejected = await api(server.baseUrl, "/trades/report", {
       method: "POST",
       token: buyer.token,
@@ -253,7 +283,7 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
     });
     assert.equal(rejected.status, 200);
     const txHash = hash(15);
-    putPurchase(txHash, buyerWallet.address);
+    putPurchase(txHash, buyerWallet.address, { listingId: onChainListingId });
     const res = await api<{ trade: { status: string; blockchainTxStatus: string } }>(server.baseUrl, "/trades/report", {
       method: "POST",
       token: buyer.token,
@@ -265,9 +295,9 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
   });
 
   it("keeps a missing receipt as PENDING and never CONFIRMED from the wallet hash alone", async () => {
-    const { buyer, buyerWallet, match } = await createMatchedTrade();
+    const { buyer, buyerWallet, match, onChainListingId } = await createMatchedTrade();
     const txHash = hash(2);
-    putPurchase(txHash, buyerWallet.address, { pending: true });
+    putPurchase(txHash, buyerWallet.address, { pending: true, listingId: onChainListingId });
     const res = await api<{ trade: { status: string; blockchainTxStatus: string } }>(server.baseUrl, "/trades/report", {
       method: "POST",
       token: buyer.token,
@@ -279,9 +309,9 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
   });
 
   it("confirms a purchase only after receipt, contract, sender, quantity and payment match", async () => {
-    const { buyer, buyerWallet, match } = await createMatchedTrade();
+    const { buyer, buyerWallet, match, onChainListingId } = await createMatchedTrade();
     const txHash = hash(3);
-    putPurchase(txHash, buyerWallet.address, { pending: true });
+    putPurchase(txHash, buyerWallet.address, { pending: true, listingId: onChainListingId });
     const pending = await api<{ trade: { blockchainTxStatus: string } }>(server.baseUrl, "/trades/report", {
       method: "POST",
       token: buyer.token,
@@ -289,7 +319,7 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
     });
     assert.equal(pending.status, 200);
     assert.equal(pending.body.data!.trade.blockchainTxStatus, "PENDING");
-    putPurchase(txHash, buyerWallet.address);
+    putPurchase(txHash, buyerWallet.address, { listingId: onChainListingId });
     const confirmed = await api<{ trade: { status: string; blockchainTxStatus: string; explorerUrl?: string } }>(
       server.baseUrl,
       "/trades/report",
@@ -306,9 +336,9 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
   });
 
   it("is idempotent for a confirmed purchase", async () => {
-    const { buyer, buyerWallet, match } = await createMatchedTrade();
+    const { buyer, buyerWallet, match, onChainListingId } = await createMatchedTrade();
     const txHash = hash(4);
-    putPurchase(txHash, buyerWallet.address);
+    putPurchase(txHash, buyerWallet.address, { listingId: onChainListingId });
     const first = await api<{ trade: { id: string } }>(server.baseUrl, "/trades/report", {
       method: "POST",
       token: buyer.token,
@@ -328,14 +358,14 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
     const first = await createMatchedTrade();
     const second = await createMatchedTrade();
     const txHash = hash(5);
-    putPurchase(txHash, first.buyerWallet.address);
+    putPurchase(txHash, first.buyerWallet.address, { listingId: first.onChainListingId });
     const okRes = await api(server.baseUrl, "/trades/report", {
       method: "POST",
       token: first.buyer.token,
       body: JSON.stringify({ matchId: first.match.id, action: "purchase", txHash, idempotencyKey: `purchase-${first.match.id}` }),
     });
     assert.equal(okRes.status, 200);
-    putPurchase(txHash, second.buyerWallet.address);
+    putPurchase(txHash, second.buyerWallet.address, { listingId: second.onChainListingId });
     const dup = await api(server.baseUrl, "/trades/report", {
       method: "POST",
       token: second.buyer.token,
@@ -461,10 +491,64 @@ describe("trade receipt verification", { skip: !dbReady }, () => {
     assert.equal(res.body.error?.code, "STALE_TRADE");
   });
 
+  it("rejects purchase when the listing has no mapped on-chain id", async () => {
+    const { buyer, buyerWallet, match, listingId } = await createMatchedTrade();
+    await prisma.listing.update({
+      where: { id: listingId },
+      data: { onChainListingId: null, onChainConfirmationStatus: null },
+    });
+    const txHash = hash(16);
+    putPurchase(txHash, buyerWallet.address);
+    const res = await api(server.baseUrl, "/trades/report", {
+      method: "POST",
+      token: buyer.token,
+      body: JSON.stringify({ matchId: match.id, action: "purchase", txHash, idempotencyKey: `purchase-${match.id}` }),
+    });
+    assert.equal(res.status, 409);
+    assert.equal(res.body.error?.code, "LISTING_NOT_MAPPED");
+  });
+
+  it("rejects EnergyPurchased for a different on-chain listing id", async () => {
+    const { buyer, buyerWallet, match } = await createMatchedTrade();
+    const txHash = hash(17);
+    const { quantity, value } = amounts();
+    putPurchase(txHash, buyerWallet.address, {
+      log: marketplaceInterface.encodeEventLog(marketplaceInterface.getEvent("EnergyPurchased")!, [
+        99n,
+        1n,
+        buyerWallet.address,
+        quantity,
+        value,
+      ]),
+    });
+    const res = await api(server.baseUrl, "/trades/report", {
+      method: "POST",
+      token: buyer.token,
+      body: JSON.stringify({ matchId: match.id, action: "purchase", txHash, idempotencyKey: `purchase-${match.id}` }),
+    });
+    assert.equal(res.status, 409);
+    assert.equal(res.body.error?.code, "LISTING_MISMATCH");
+  });
+
+  it("rejects a receipt whose hash does not match the reported txHash", async () => {
+    const { buyer, buyerWallet, match } = await createMatchedTrade();
+    const txHash = hash(18);
+    putPurchase(txHash, buyerWallet.address);
+    const receipt = rpc.receipts.get(txHash)!;
+    receipt.transactionHash = hash(19);
+    const res = await api(server.baseUrl, "/trades/report", {
+      method: "POST",
+      token: buyer.token,
+      body: JSON.stringify({ matchId: match.id, action: "purchase", txHash, idempotencyKey: `purchase-${match.id}` }),
+    });
+    assert.equal(res.status, 409);
+    assert.equal(res.body.error?.code, "TX_HASH_MISMATCH");
+  });
+
   it("confirms settleTrade after a verified purchase", async () => {
-    const { buyer, seller, buyerWallet, sellerWallet, match } = await createMatchedTrade();
+    const { buyer, seller, buyerWallet, sellerWallet, match, onChainListingId } = await createMatchedTrade();
     const purchaseHash = hash(12);
-    putPurchase(purchaseHash, buyerWallet.address);
+    putPurchase(purchaseHash, buyerWallet.address, { listingId: onChainListingId });
     const purchased = await api<{ trade: { blockchainTxStatus: string } }>(server.baseUrl, "/trades/report", {
       method: "POST",
       token: buyer.token,

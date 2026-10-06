@@ -162,13 +162,17 @@ export async function refresh(
   }
 
   const record = await prisma.refreshToken.findUnique({ where: { id: payload.tokenId } });
-  if (
-    !record ||
-    record.userId !== payload.sub ||
-    record.revokedAt !== null ||
-    record.expiresAt.getTime() <= Date.now() ||
-    record.tokenHash !== sha256Hex(refreshToken)
-  ) {
+  if (!record || record.userId !== payload.sub || record.tokenHash !== sha256Hex(refreshToken)) {
+    throw new HttpError(401, "INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired");
+  }
+  if (record.revokedAt !== null) {
+    await prisma.refreshToken.updateMany({
+      where: { userId: payload.sub, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    throw new HttpError(401, "REFRESH_TOKEN_REUSED", "Refresh token has already been used");
+  }
+  if (record.expiresAt.getTime() <= Date.now()) {
     throw new HttpError(401, "INVALID_REFRESH_TOKEN", "Refresh token is invalid or expired");
   }
 
@@ -177,6 +181,10 @@ export async function refresh(
     data: { revokedAt: new Date() },
   });
   if (revoked.count !== 1) {
+    await prisma.refreshToken.updateMany({
+      where: { userId: payload.sub, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
     throw new HttpError(401, "REFRESH_TOKEN_REUSED", "Refresh token has already been used");
   }
 

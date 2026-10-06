@@ -81,7 +81,7 @@ describe("iot schemas", () => {
   it("accepts a zero meter reading", () => {
     const parsed = ingestEnergyReadingSchema.parse({ kwh: 0, deviceId: "m-1" });
     assert.equal(parsed.kwh, 0);
-    assert.equal(parsed.sourceLabel, DataSourceLabel.ACTUAL);
+    assert.equal(parsed.sourceLabel, DataSourceLabel.ESTIMATED);
   });
 });
 

@@ -563,7 +563,7 @@ export const openApiDocument = {
         summary: "Ingest one labelled meter reading. Does not change listings, bids, or trades.",
         tags: ["IoT"],
         security: [{ bearerAuth: [] }],
-        requestBody: jsonBody("kwh, optional recordedAt, deviceId, sourceLabel, energyType"),
+        requestBody: jsonBody("kwh, optional recordedAt, deviceId, sourceLabel (default ESTIMATED), energyType"),
         responses: {
           "201": envelope("Persisted EnergyHistory sample with sourceLabel"),
           "401": envelope("Authentication required"),

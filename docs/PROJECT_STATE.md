@@ -1,7 +1,9 @@
 # EnerMesh project state
 
-Last updated: 2026-10-02
+Last updated: 2026-10-06
 Current sprint: **S12 Hybrid DB sync / on-chain listing id persistence** — COMPLETE
+Post-S12: **final hardening pass** — COMPLETE
+Post-hardening: **P0/P1 verification** — COMPLETE (2026-10-06).
 Next sprint: none scheduled. Do not start a new sprint unless asked.
 
 ## Protocol
@@ -35,13 +37,24 @@ Building on S11 (Docker, production scripts, CI):
 - **API surface** — ListingPublic and MatchPublic expose the persisted id and explorer URL when confirmed. RBAC: seller owner or ADMIN.
 - **Web** — Publish listing reports the txHash to the API. UI shows persisted id, explorer, pending, and error. Purchase uses the API id when present. Wallet mined receipts stay PENDING.
 
-## Validation (S12)
+## Post-S12 hardening
+
+Integrity and fail-closed settlement, without a new sprint:
+
+- Purchase/settle bind `EnergyPurchased.listingId` to `Listing.onChainListingId` and persist `Trade.onChainTradeId`.
+- Listing PATCH/cancel and match confirm run under serializable `FOR UPDATE`.
+- Min-trade remainder may fill the last lot; equal-price ties use createdAt then listing id.
+- Contract: unique non-zero `externalId`, escrow blocks cancel, operator `refundTrade` emits `TradeRefunded`.
+- Refresh reuse revokes the user token family; JWT sign/verify is HS256-only.
+- Wallet nonce consume is atomic; IoT ingest defaults to ESTIMATED; quantity identity CHECK on Listing.
+- Verification 2026-10-06: typecheck/lint/test/build/hardhat passed. Remaining P2: no live socket kick on logout/disable; bid cancel is not row-locked; analytics snapshot is unpaginated; DB cancel does not call on-chain `cancelListing`.
+
+## Validation (S12 + hardening)
 
 - `npm run typecheck` — passed
 - `npm run lint` — passed (existing solhint warnings in contracts)
-- `npm run test` — passed (API 122, web 42, shared 47)
-- `npm run build` — passed (shared, api, web, contracts)
-- `npx hardhat test` in `packages/contracts` — 12 passing
+- `npm run test` — passed (API 125, web 42, shared 49)
+- `npx hardhat test` in `packages/contracts` — 15 passing
 - Docker CLI is not installed in this workspace, so image builds were not run here.
 
 S12 tests added:

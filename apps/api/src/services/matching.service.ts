@@ -11,6 +11,7 @@ import {
 } from "@enermesh/shared";
 import { recordAudit } from "../lib/audit.js";
 import { prisma } from "../lib/prisma.js";
+import { lockBids, lockListings, withSerializableRetry } from "../lib/serializable.js";
 import { HttpError } from "../middleware/errorHandler.js";
 import {
   emitBidCreated,
@@ -92,58 +93,6 @@ function bidStatusAfterFill(unmatched: number, matched: number): BidStatus {
   return "OPEN";
 }
 
-function collectErrorCodes(error: unknown, seen = new Set<unknown>()): string[] {
-  if (typeof error !== "object" || error === null || seen.has(error)) return [];
-  seen.add(error);
-  const rec = error as { code?: unknown; meta?: { code?: unknown }; cause?: unknown };
-  const codes: string[] = [];
-  if (typeof rec.code === "string" || typeof rec.code === "number") codes.push(String(rec.code));
-  if (typeof rec.meta?.code === "string" || typeof rec.meta?.code === "number") {
-    codes.push(String(rec.meta.code));
-  }
-  codes.push(...collectErrorCodes(rec.cause, seen));
-  return codes;
-}
-
-function isRetryableConcurrencyError(error: unknown): boolean {
-  const codes = new Set(collectErrorCodes(error).map((code) => String(code).toUpperCase()));
-  if (codes.has("P2034") || codes.has("40001") || codes.has("40P01")) return true;
-  const rec = error as { message?: string; meta?: { message?: string } };
-  const text = `${rec.message ?? ""} ${rec.meta?.message ?? ""}`.toLowerCase();
-  return (
-    text.includes("could not serialize") ||
-    text.includes("serialization failure") ||
-    text.includes("deadlock detected") ||
-    text.includes("write conflict") ||
-    text.includes("concurrent update")
-  );
-}
-
-function backoffMs(attempt: number): number {
-  return 15 * 2 ** attempt;
-}
-
-async function withSerializableRetry<T>(
-  fn: (tx: Prisma.TransactionClient) => Promise<T>,
-  attempts = 8,
-): Promise<T> {
-  let lastError: unknown;
-  for (let attempt = 0; attempt < attempts; attempt += 1) {
-    try {
-      return await prisma.$transaction(fn, {
-        isolationLevel: "Serializable",
-        maxWait: 5_000,
-        timeout: 15_000,
-      });
-    } catch (error) {
-      lastError = error;
-      if (!isRetryableConcurrencyError(error) || attempt >= attempts - 1) throw error;
-      await new Promise((resolve) => setTimeout(resolve, backoffMs(attempt)));
-    }
-  }
-  throw lastError;
-}
-
 function toCandidate(listing: ListingRow): MatchCandidateListing {
   return {
     id: listing.id,
@@ -158,17 +107,6 @@ function toCandidate(listing: ListingRow): MatchCandidateListing {
     availableUntil: listing.availableUntil,
     createdAt: listing.createdAt,
   };
-}
-
-async function lockListings(tx: Prisma.TransactionClient, ids: string[]): Promise<void> {
-  if (ids.length === 0) return;
-  const ordered = [...ids].sort();
-  await tx.$queryRaw`
-    SELECT id FROM "Listing"
-    WHERE id IN (${Prisma.join(ordered)})
-    ORDER BY id
-    FOR UPDATE
-  `;
 }
 
 async function loadMatchableListings(
@@ -397,7 +335,7 @@ export async function rematchOpenBid(bidId: string): Promise<{ bid: BidPublic; m
       const expired = await tx.bid.update({ where: { id: bidId }, data: { status: "EXPIRED" } });
       return { bid: expired, matches: [] as MatchWithListing[] };
     }
-    await tx.$queryRaw`SELECT id FROM "Bid" WHERE id = ${bidId} FOR UPDATE`;
+    await lockBids(tx, [bidId]);
     const locked = await tx.bid.findUniqueOrThrow({ where: { id: bidId } });
     const listings = await loadMatchableListings(tx, {
       listingId: locked.listingId ?? undefined,

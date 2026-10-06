@@ -124,17 +124,17 @@ describe("iot energy history", { skip: !dbReady }, () => {
     assert.equal(ingest.status, 201);
     const sample = ingest.body.data!.sample;
     assert.equal(sample.kwh, 2.5);
-    assert.equal(sample.sourceLabel, "ACTUAL");
+    assert.equal(sample.sourceLabel, "ESTIMATED");
     assert.equal(sample.adapter, "http");
     assert.equal(sample.userId, seller.userId);
 
     const history = await api<{
       samples: Array<{ kwh: number; sourceLabel: string }>;
-      summary: { totalKwh: number; bySourceLabel: { ACTUAL: { totalKwh: number }; SIMULATED: { totalKwh: number } } };
+      summary: { totalKwh: number; bySourceLabel: { ESTIMATED: { totalKwh: number }; SIMULATED: { totalKwh: number } } };
     }>(server.baseUrl, "/iot/history", { token: seller.token });
     assert.equal(history.status, 200);
     assert.equal(history.body.data!.summary.totalKwh, 2.5);
-    assert.equal(history.body.data!.summary.bySourceLabel.ACTUAL.totalKwh, 2.5);
+    assert.equal(history.body.data!.summary.bySourceLabel.ESTIMATED.totalKwh, 2.5);
     assert.equal(history.body.data!.summary.bySourceLabel.SIMULATED.totalKwh, 0);
 
     const listingsAfter = await api<{ total: number }>(server.baseUrl, "/listings/mine", { token: seller.token });

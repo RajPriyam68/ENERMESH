@@ -98,4 +98,29 @@ describe("deterministic matching", () => {
     const bid = { ...baseBid(), unmatchedKwh: 5 };
     assert.equal(computePartialMatch(listing, bid), null);
   });
+
+  it("allows a remainder smaller than min trade when it is the last lot", () => {
+    const listing = { ...baseListing(), minTradeKwh: 10, availableQuantityKwh: 7, maxTradeKwh: 100 };
+    const result = computePartialMatch(listing, { ...baseBid(), unmatchedKwh: 7 });
+    assert.ok(result);
+    assert.equal(result.matchedKwh, 7);
+    assert.equal(result.remainingListingKwh, 0);
+  });
+
+  it("breaks equal-price ties by createdAt then listing id", () => {
+    const later = {
+      ...baseListing(),
+      id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+      pricePerKwh: 3,
+      createdAt: new Date("2026-09-13T10:00:00Z"),
+    };
+    const earlier = {
+      ...baseListing(),
+      id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      pricePerKwh: 3,
+      createdAt: new Date("2026-09-13T07:00:00Z"),
+    };
+    const results = matchBidAgainstListings({ ...baseBid(), unmatchedKwh: 10 }, [later, earlier]);
+    assert.equal(results[0]!.listingId, earlier.id);
+  });
 });

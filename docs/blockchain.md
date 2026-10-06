@@ -13,12 +13,13 @@ Not stored on-chain: PII, passwords, private keys, large datasets, AI outputs.
 `packages/contracts/contracts/EnerMeshMarketplace.sol`
 
 - OpenZeppelin `AccessControl`, `Pausable`, `ReentrancyGuard`
-- Events: `ListingCreated`, `ListingUpdated`, `ListingCancelled`, `EnergyPurchased`, `TradeSettled`
+- Events: `ListingCreated`, `ListingUpdated`, `ListingCancelled`, `EnergyPurchased`, `TradeSettled`, `TradeRefunded`
 - `pause` / `unpause` (admin)
-- `createListing(quantityKwh, pricePerKwh, externalId)` — remaining energy and wei per unit
-- `updateListing` / `cancelListing` — seller or operator
-- `purchaseEnergy(listingId, quantityKwh)` payable — exact `quantity * price`, no self-trade, no oversell
-- `settleTrade(tradeId)` — buyer, seller, or operator; pays the seller with `Address.sendValue`
+- `createListing(quantityKwh, pricePerKwh, externalId)` — remaining energy and wei per unit; non-zero `externalId` is unique
+- `updateListing` / `cancelListing` — seller or operator; cancel reverts with `escrow pending` while an unsettled purchase holds funds
+- `purchaseEnergy(listingId, quantityKwh)` payable — exact `quantity * price`, no self-trade, no oversell; increments `listingEscrowed`
+- `settleTrade(tradeId)` — buyer, seller, or operator; pays the seller with `Address.sendValue`; emits `TradeSettled`
+- `refundTrade(tradeId)` — operator only; returns escrow to the buyer, restores listing quantity, emits `TradeRefunded` (not `TradeSettled`)
 
 Units: milli-kWh (`kWh * 1000`) and wei per milli-kWh. Network/RPC/address come from `CHAIN_ID`, `RPC_URL`, `CONTRACT_ADDRESS` (and `NEXT_PUBLIC_*` on the web).
 
@@ -41,10 +42,12 @@ The API sets trade DB `CONFIRMED` only after `POST /trades/report`:
 1. Transaction receipt with success on the configured RPC
 2. Expected event (`EnergyPurchased` or `TradeSettled`) on the configured contract
 3. Quantity, payment, and wallets match the intended trade and verified addresses
-4. Idempotency key / `txHash` uniqueness
-5. Chain id equals `CHAIN_ID`
+4. `EnergyPurchased.listingId` equals the live `Listing.onChainListingId` (fail closed if unmapped); `TradeSettled.tradeId` equals the persisted purchase `onChainTradeId`
+5. Receipt/tx hash equals the reported `txHash`
+6. Idempotency key / `txHash` uniqueness
+7. Chain id equals `CHAIN_ID`
 
-A missing receipt is stored as `PENDING`. A revert or invalid event is `FAILED`. Wallet rejection is `REJECTED` and has no `txHash`.
+Confirmed rows persist `Trade.onChainListingId` and `Trade.onChainTradeId`. A missing receipt is stored as `PENDING`. A revert or invalid event is `FAILED`. Wallet rejection is `REJECTED` and has no `txHash`; the match stays `PROPOSED` so the buyer can retry. Off-chain listing cancel does not send `cancelListing` on-chain; a later purchase report still fails `STALE_TRADE`.
 
 Explorer URL is composed from `BLOCK_EXPLORER_URL` + `txHash`. No vendor is hardcoded in application logic.
 

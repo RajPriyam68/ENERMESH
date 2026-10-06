@@ -41,12 +41,15 @@ contract EnerMeshMarketplace is AccessControl, Pausable, ReentrancyGuard {
 
     mapping(uint256 => Listing) public listings;
     mapping(uint256 => Trade) public trades;
+    mapping(uint256 => bool) public externalIdUsed;
+    mapping(uint256 => uint256) public listingEscrowed;
 
     event ListingCreated(uint256 indexed listingId, address indexed seller, uint256 quantityKwh, uint256 pricePerKwh);
     event ListingUpdated(uint256 indexed listingId, uint256 quantityKwh, uint256 pricePerKwh, uint8 status);
     event ListingCancelled(uint256 indexed listingId, address indexed seller);
     event EnergyPurchased(uint256 indexed listingId, uint256 indexed tradeId, address indexed buyer, uint256 quantityKwh, uint256 totalPaid);
     event TradeSettled(uint256 indexed tradeId, address indexed seller, address indexed buyer, uint256 quantityKwh);
+    event TradeRefunded(uint256 indexed tradeId, address indexed buyer, uint256 quantityKwh, uint256 totalPaid);
 
     constructor(address admin) {
         require(admin != address(0), "admin required");
@@ -72,6 +75,10 @@ contract EnerMeshMarketplace is AccessControl, Pausable, ReentrancyGuard {
     ) external whenNotPaused returns (uint256 listingId) {
         require(quantityKwh > 0, "quantity required");
         require(pricePerKwh > 0, "price required");
+        if (externalId != 0) {
+            require(!externalIdUsed[externalId], "external id used");
+            externalIdUsed[externalId] = true;
+        }
 
         listingId = nextListingId;
         nextListingId += 1;
@@ -117,6 +124,7 @@ contract EnerMeshMarketplace is AccessControl, Pausable, ReentrancyGuard {
         require(listing.seller != address(0), "listing not found");
         require(listing.status != LISTING_CANCELLED, "already cancelled");
         require(_isListingManager(listing.seller), "not authorized");
+        require(listingEscrowed[listingId] == 0, "escrow pending");
 
         listing.status = LISTING_CANCELLED;
         emit ListingCancelled(listingId, listing.seller);
@@ -137,6 +145,7 @@ contract EnerMeshMarketplace is AccessControl, Pausable, ReentrancyGuard {
         if (listing.remainingKwh == 0) {
             listing.status = LISTING_SOLD_OUT;
         }
+        listingEscrowed[listingId] += 1;
 
         uint256 tradeId = nextTradeId;
         nextTradeId += 1;
@@ -162,8 +171,31 @@ contract EnerMeshMarketplace is AccessControl, Pausable, ReentrancyGuard {
         );
 
         trade.settled = true;
+        uint256 escrowed = listingEscrowed[trade.listingId];
+        if (escrowed > 0) {
+            listingEscrowed[trade.listingId] = escrowed - 1;
+        }
         emit TradeSettled(tradeId, trade.seller, trade.buyer, trade.quantityKwh);
         payable(trade.seller).sendValue(trade.totalPaid);
+    }
+
+    function refundTrade(uint256 tradeId) external whenNotPaused nonReentrant onlyRole(OPERATOR_ROLE) {
+        Trade storage trade = trades[tradeId];
+        require(trade.buyer != address(0), "trade not found");
+        require(!trade.settled, "already settled");
+
+        trade.settled = true;
+        uint256 escrowed = listingEscrowed[trade.listingId];
+        if (escrowed > 0) {
+            listingEscrowed[trade.listingId] = escrowed - 1;
+        }
+        Listing storage listing = listings[trade.listingId];
+        listing.remainingKwh += trade.quantityKwh;
+        if (listing.status == LISTING_SOLD_OUT) {
+            listing.status = LISTING_ACTIVE;
+        }
+        emit TradeRefunded(tradeId, trade.buyer, trade.quantityKwh, trade.totalPaid);
+        payable(trade.buyer).sendValue(trade.totalPaid);
     }
 
     function _isListingManager(address seller) internal view returns (bool) {

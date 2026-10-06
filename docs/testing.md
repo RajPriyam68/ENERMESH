@@ -108,6 +108,7 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Shared: `reportOnChainListingSchema` requires `txHash` for confirm and forbids it on reject
 - API: ListingCreated parsing only from the configured contract; persist verified listing id; idempotent confirm; duplicate on-chain id / txHash; wrong chain/contract/wallet; missing/malformed event; revert; other listing uuid; concurrent confirm; ownership 403; S4 settlement tests still pass
 - Web: listing search params unchanged; publish UI reports txHash to `/listings/:id/on-chain` and never treats a mined wallet receipt as confirmed
+- Hardening: `LISTING_NOT_MAPPED`, `LISTING_MISMATCH`, `TX_HASH_MISMATCH`; min-trade last lot; createdAt/id ties; escrow-blocked cancel; operator `refundTrade`; duplicate email 409 `EMAIL_IN_USE`; limiter 429 `RATE_LIMITED`
 
 ## Commands
 

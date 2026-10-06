@@ -65,16 +65,10 @@ export function computePartialMatch(
 ): MatchResult | null {
   if (!isCompatible(listing, bid)) return null;
 
-  const tradeCap = Math.min(listing.maxTradeKwh, listing.availableQuantityKwh, bid.unmatchedKwh);
-  if (tradeCap < listing.minTradeKwh && tradeCap < bid.unmatchedKwh) {
-    if (listing.availableQuantityKwh < listing.minTradeKwh && bid.unmatchedKwh < listing.minTradeKwh) {
-      return null;
-    }
-  }
-
   const matchedKwh = roundKwh(Math.min(listing.availableQuantityKwh, bid.unmatchedKwh, listing.maxTradeKwh));
   if (matchedKwh <= 0) return null;
-  if (matchedKwh < listing.minTradeKwh && listing.availableQuantityKwh >= listing.minTradeKwh) {
+  const isFinalLot = matchedKwh === roundKwh(listing.availableQuantityKwh);
+  if (matchedKwh < listing.minTradeKwh && !isFinalLot) {
     return null;
   }
 
@@ -112,7 +106,9 @@ export function sortListingsForMatching(listings: MatchCandidateListing[]): Matc
     if (a.pricePerKwh !== b.pricePerKwh) return a.pricePerKwh - b.pricePerKwh;
     if (a.energyType !== b.energyType) return a.energyType.localeCompare(b.energyType);
     if (a.marketZone !== b.marketZone) return a.marketZone.localeCompare(b.marketZone);
-    return a.createdAt.getTime() - b.createdAt.getTime();
+    const byTime = a.createdAt.getTime() - b.createdAt.getTime();
+    if (byTime !== 0) return byTime;
+    return a.id.localeCompare(b.id);
   });
 }
 

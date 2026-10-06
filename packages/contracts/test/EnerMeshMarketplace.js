@@ -144,4 +144,33 @@ describe("EnerMeshMarketplace (S4)", () => {
     await expect(market.connect(other).settleTrade(1)).to.be.revertedWith("not authorized");
     await expect(market.connect(buyer).settleTrade(99)).to.be.revertedWith("trade not found");
   });
+
+  it("rejects a duplicate non-zero externalId", async () => {
+    const { market, seller, other } = await deploy();
+    await market.connect(seller).createListing(10, 1, 77);
+    await expect(market.connect(other).createListing(5, 1, 77)).to.be.revertedWith("external id used");
+  });
+
+  it("blocks cancel while purchase escrow is pending", async () => {
+    const { market, seller, buyer } = await deploy();
+    await market.connect(seller).createListing(10, 2, 0);
+    await market.connect(buyer).purchaseEnergy(1, 4, { value: 8 });
+    await expect(market.connect(seller).cancelListing(1)).to.be.revertedWith("escrow pending");
+    await market.connect(buyer).settleTrade(1);
+    await expect(market.connect(seller).cancelListing(1)).to.emit(market, "ListingCancelled");
+  });
+
+  it("lets the operator refund an unsettled purchase to the buyer", async () => {
+    const { market, seller, buyer } = await deploy();
+    await market.connect(seller).createListing(10, 5, 0);
+    await market.connect(buyer).purchaseEnergy(1, 2, { value: 10 });
+    const before = await ethers.provider.getBalance(buyer.address);
+    await expect(market.refundTrade(1)).to.emit(market, "TradeRefunded").withArgs(1, buyer.address, 2, 10);
+    const after = await ethers.provider.getBalance(buyer.address);
+    expect(after - before).to.equal(10n);
+    const listing = await market.listings(1);
+    expect(listing.remainingKwh).to.equal(10n);
+    expect(listing.status).to.equal(1);
+    await expect(market.connect(buyer).settleTrade(1)).to.be.revertedWith("already settled");
+  });
 });

@@ -35,7 +35,7 @@ export const ingestEnergyReadingSchema = z
     kwh: energySampleKwhSchema,
     recordedAt: z.coerce.date().optional(),
     deviceId: iotDeviceIdSchema.optional(),
-    sourceLabel: sourceLabelEnum.default(DataSourceLabel.ACTUAL),
+    sourceLabel: sourceLabelEnum.default(DataSourceLabel.ESTIMATED),
     energyType: energyTypeEnum.optional(),
   })
   .strict();

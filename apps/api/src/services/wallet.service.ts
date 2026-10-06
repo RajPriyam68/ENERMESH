@@ -48,22 +48,23 @@ export async function requestWalletNonce(
   const address = normalizeAddress(input.address);
   const chainId = input.chainId ?? env.CHAIN_ID;
 
-  const existing = await prisma.wallet.findUnique({ where: { address } });
-  if (existing && existing.userId !== userId) {
-    throw new HttpError(409, "WALLET_ALREADY_LINKED", "This wallet is already linked to another account");
-  }
-
   const nonce = randomHex(16);
   const now = new Date();
   const expiresAt = new Date(now.getTime() + NONCE_TTL_MS);
 
-  if (existing) {
-    await prisma.wallet.update({
-      where: { address },
-      data: { nonce, nonceIssuedAt: now, nonceExpiresAt: expiresAt, chainId },
-    });
-  } else {
-    await prisma.wallet.create({
+  await prisma.$transaction(async (tx) => {
+    const current = await tx.wallet.findUnique({ where: { address } });
+    if (current && current.userId !== userId) {
+      throw new HttpError(409, "WALLET_ALREADY_LINKED", "This wallet is already linked to another account");
+    }
+    if (current) {
+      await tx.wallet.update({
+        where: { address },
+        data: { nonce, nonceIssuedAt: now, nonceExpiresAt: expiresAt, chainId },
+      });
+      return;
+    }
+    await tx.wallet.create({
       data: {
         userId,
         address,
@@ -74,7 +75,7 @@ export async function requestWalletNonce(
         nonceExpiresAt: expiresAt,
       },
     });
-  }
+  });
 
   return {
     address,
@@ -130,11 +131,13 @@ export async function verifyWalletSignature(
     recovered = null;
   }
 
-  // Consume the challenge now: it is valid exactly once, pass or fail.
-  await prisma.wallet.update({
-    where: { address },
+  const consumed = await prisma.wallet.updateMany({
+    where: { address, nonce: input.nonce, nonceExpiresAt: { gt: new Date() } },
     data: { nonce: null, nonceIssuedAt: null, nonceExpiresAt: null },
   });
+  if (consumed.count !== 1) {
+    throw new HttpError(409, "NONCE_CONSUMED", "Verification challenge was already used");
+  }
 
   if (!recovered || normalizeAddress(recovered) !== address) {
     throw new HttpError(401, "SIGNATURE_INVALID", "Signature does not match the wallet address");
