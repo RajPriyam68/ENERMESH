@@ -111,6 +111,7 @@ describe("auth integration", { skip: !dbReady }, () => {
     const { res } = await registerUser("SELLER");
     assert.equal(res.status, 201);
     assert.equal(res.body.success, true);
+    assert.equal(res.body.data!.user.role, "SELLER");
     const serialized = JSON.stringify(res.body);
     assert.equal(serialized.includes("passwordHash"), false);
     assert.equal(serialized.includes("$2"), false);
@@ -120,6 +121,18 @@ describe("auth integration", { skip: !dbReady }, () => {
     assert.match(refreshCookie, /Path=\/api\/v1\/auth/i);
     assert.match(refreshCookie, /SameSite=Lax/i);
     assert.equal(/Secure/i.test(refreshCookie), false);
+  });
+
+  it("registers a BUYER and logs in with the same credentials", async () => {
+    const { email, password, res } = await registerUser("BUYER");
+    assert.equal(res.status, 201);
+    assert.equal(res.body.data!.user.role, "BUYER");
+    const login = await api<{ user: { role: string } }>(server.baseUrl, "/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    assert.equal(login.status, 200);
+    assert.equal(login.body.data!.user.role, "BUYER");
   });
 
   it("rejects duplicate emails with 409", async () => {
@@ -302,6 +315,26 @@ describe("auth integration", { skip: !dbReady }, () => {
     });
     assert.equal(allowed.status, 200);
     assert.ok(Array.isArray(allowed.body.data!.users));
+
+    const buyer = await registerUser("BUYER");
+    const buyerLogin = await api<{ tokens: { accessToken: string } }>(server.baseUrl, "/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email: buyer.email, password: buyer.password }),
+    });
+    const buyerDenied = await api(server.baseUrl, "/admin/users", {
+      token: buyerLogin.body.data!.tokens.accessToken,
+    });
+    assert.equal(buyerDenied.status, 403);
+    assert.equal(buyerDenied.body.error?.code, "FORBIDDEN");
+
+    const auditDenied = await api(server.baseUrl, "/admin/audit-logs", {
+      token: buyerLogin.body.data!.tokens.accessToken,
+    });
+    assert.equal(auditDenied.status, 403);
+    const reportsDenied = await api(server.baseUrl, "/reports/marketplace", {
+      token: sellerToken,
+    });
+    assert.equal(reportsDenied.status, 403);
   });
 
   it("updates profile and settings and rejects unknown fields", async () => {
@@ -376,5 +409,134 @@ describe("auth integration", { skip: !dbReady }, () => {
       body: JSON.stringify({ email, password: "BrandNewPass123" }),
     });
     assert.equal(newLogin.status, 200);
+  });
+
+  it("returns the same forgot-password payload for existing and unknown emails", async () => {
+    const { consumeLastOutboundMail, setMailSenderForTests } = await import("../lib/mailer.js");
+    const deliveries: string[] = [];
+    setMailSenderForTests(async (message) => {
+      deliveries.push(message.to);
+    });
+    const { email } = await registerUser("BUYER");
+    consumeLastOutboundMail();
+    deliveries.length = 0;
+
+    const existing = await api<{ message: string }>(server.baseUrl, "/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+    const missing = await api<{ message: string }>(server.baseUrl, "/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email: uniqueEmail("ghost-reset") }),
+    });
+    assert.equal(existing.status, 200);
+    assert.equal(missing.status, 200);
+    assert.equal(existing.body.data!.message, missing.body.data!.message);
+    assert.equal(JSON.stringify(existing.body).includes("token"), false);
+    assert.deepEqual(deliveries, [email]);
+    const outbound = consumeLastOutboundMail();
+    assert.ok(outbound);
+    assert.match(outbound.text, /reset-password\?token=/);
+    assert.match(outbound.html ?? "", /Reset password/);
+    setMailSenderForTests(null);
+  });
+
+  it("keeps the generic forgot-password response when mail delivery fails", async () => {
+    const { consumeLastOutboundMail, setMailSenderForTests } = await import("../lib/mailer.js");
+    setMailSenderForTests(async () => {
+      throw new Error("smtp unavailable");
+    });
+    const { email } = await registerUser("BUYER");
+    consumeLastOutboundMail();
+    const res = await api<{ message: string }>(server.baseUrl, "/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.data!.message, "If an account exists for that email, a reset link has been sent.");
+    assert.equal(JSON.stringify(res.body).includes("smtp"), false);
+    setMailSenderForTests(null);
+  });
+
+  it("resets the password once, rejects reuse/expiry, and revokes sessions", async () => {
+    const { consumeLastOutboundMail } = await import("../lib/mailer.js");
+    const { sha256Hex } = await import("../lib/crypto.js");
+    const { email, password } = await registerUser("SELLER");
+    consumeLastOutboundMail();
+
+    const login = await api<{ tokens: { accessToken: string } }>(server.baseUrl, "/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    const cookie = login.setCookie.find((c) => c.startsWith("enermesh_refresh="))!.split(";")[0]!;
+
+    const requested = await api(server.baseUrl, "/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+    assert.equal(requested.status, 200);
+    const mail = consumeLastOutboundMail();
+    assert.ok(mail);
+    const token = new URL(mail.text.match(/https?:\/\/\S+/)![0]!).searchParams.get("token");
+    assert.ok(token);
+    assert.equal(JSON.stringify(requested.body).includes(token), false);
+
+    const invalid = await api(server.baseUrl, "/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token: "not-a-valid-reset-token", password: "BrandNewPass123" }),
+    });
+    assert.equal(invalid.status, 401);
+    assert.equal(invalid.body.error?.code, "INVALID_RESET_TOKEN");
+
+    const reset = await api<{ message: string }>(server.baseUrl, "/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password: "BrandNewPass123" }),
+    });
+    assert.equal(reset.status, 200);
+
+    const replay = await api(server.baseUrl, "/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, password: "AnotherPass123" }),
+    });
+    assert.equal(replay.status, 401);
+    assert.equal(replay.body.error?.code, "INVALID_RESET_TOKEN");
+
+    const staleSession = await api(server.baseUrl, "/auth/refresh", {
+      method: "POST",
+      cookie,
+      body: JSON.stringify({}),
+    });
+    assert.equal(staleSession.status, 401);
+
+    const oldPassword = await api(server.baseUrl, "/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    assert.equal(oldPassword.status, 401);
+
+    const newLogin = await api(server.baseUrl, "/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password: "BrandNewPass123" }),
+    });
+    assert.equal(newLogin.status, 200);
+
+    const { email: expiredEmail } = await registerUser("BUYER");
+    consumeLastOutboundMail();
+    await api(server.baseUrl, "/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email: expiredEmail }),
+    });
+    const expiredMail = consumeLastOutboundMail();
+    const expiredToken = new URL(expiredMail!.text.match(/https?:\/\/\S+/)![0]!).searchParams.get("token");
+    await prisma.passwordResetToken.updateMany({
+      where: { tokenHash: sha256Hex(expiredToken!) },
+      data: { expiresAt: new Date(Date.now() - 60_000) },
+    });
+    const expired = await api(server.baseUrl, "/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token: expiredToken, password: "BrandNewPass123" }),
+    });
+    assert.equal(expired.status, 401);
+    assert.equal(expired.body.error?.code, "INVALID_RESET_TOKEN");
   });
 });

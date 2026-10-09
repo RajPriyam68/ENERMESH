@@ -30,7 +30,9 @@ Errors:
 | POST | `/api/v1/auth/register` | public | Create a BUYER or SELLER account |
 | POST | `/api/v1/auth/login` | public | Authenticate and start a session |
 | POST | `/api/v1/auth/refresh` | refresh token | Rotate the refresh token for a new session |
-| POST | `/api/v1/auth/logout` | access token | Revoke the current (or all) refresh tokens |
+| POST | `/api/v1/auth/logout` | cookie and/or access token | Revoke the current (or all) refresh tokens and clear the cookie |
+| POST | `/api/v1/auth/forgot-password` | public | Request a password reset; same 200 whether or not the email exists |
+| POST | `/api/v1/auth/reset-password` | public | Consume a single-use token, set a new password, revoke sessions |
 | GET | `/api/v1/auth/me` | access token | Current authenticated user |
 
 ### Profile and settings (S1)
@@ -67,6 +69,8 @@ Errors:
   use, and reuse is rejected with 401.
 - Passwords are hashed with bcrypt (`BCRYPT_ROUNDS`, default 12). Only the hash is stored.
 - `authenticate` reloads the user on every request, so role changes and deactivation take effect immediately.
+- Password reset tokens are SHA-256 hashed, single-use, and expire after `PASSWORD_RESET_TTL_MINUTES` (default 60). Forgot-password always returns the same 200 body. Successful reset revokes all refresh sessions. `/auth/forgot-password` and `/auth/reset-password` are limited to 5 requests / minute / IP.
+- Reset mail is sent with nodemailer over `SMTP_URL` (any SMTP/SMTPS provider). Development Mailpit: host/Windows API uses `smtp://localhost:1025`; API in Docker Compose uses `smtp://mailpit:1025` (never `localhost` from inside the API container). Mailpit is compose profile `dev` only (UI `http://localhost:8025`). Production requires a real `SMTP_URL` and must not use Mailpit. Delivery failure still returns the generic 200 and never exposes the token.
 
 ## Wallet challenge
 
@@ -79,6 +83,8 @@ Admin accounts are never self-assigned. Provision the first one out-of-band:
 ```bash
 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD='ChangeMe123' npm run seed:admin
 ```
+
+`seed:admin` creates the account or promotes an existing email to ADMIN, resets that password, and sets `isActive: true`. Password rules match public registration. Role cannot be assigned through `/auth/register` or profile/settings.
 
 ### Listings (S2)
 
@@ -209,7 +215,7 @@ All mutations: Zod validation, RBAC, pagination/filter/sort on lists, idempotenc
 
 - HTTP 401 unauthenticated, 403 forbidden, 404 missing, 409 conflict (e.g. oversell), 410 expired challenge,
   422 validation, 429 rate limit, 503 not ready
-- Rate limit: 120 requests / minute / IP globally; 20 / minute on `/auth/*`, `/wallets/nonce`, `/wallets/verify`, and `/ai/insights`; 40 / minute on `/admin/*`, `/reports/*`, `/iot/readings`, and `/iot/simulate`. Limiters skip when `NODE_ENV=test`.
+- Rate limit: 120 requests / minute / IP globally; 20 / minute on `/auth/register`, `/auth/login`, `/auth/refresh`, `/wallets/nonce`, `/wallets/verify`, and `/ai/insights`; 5 / minute on `/auth/forgot-password` and `/auth/reset-password`; 40 / minute on `/admin/*`, `/reports/*`, `/iot/readings`, and `/iot/simulate`. Limiters skip when `NODE_ENV=test`.
 - CORS origin from `WEB_ORIGIN`
 - Socket.IO path from `SOCKET_PATH`; the handshake requires a valid access token and clients do not emit
   privileged events

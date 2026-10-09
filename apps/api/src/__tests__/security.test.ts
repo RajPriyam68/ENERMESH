@@ -53,6 +53,10 @@ function productionEnv(overrides: Partial<Env> = {}): Env {
     MQTT_URL: "",
     MQTT_USERNAME: "",
     MQTT_PASSWORD: "",
+    SMTP_URL: "",
+    SMTP_FROM: "EnerMesh <noreply@localhost>",
+    PASSWORD_RESET_TTL_MINUTES: 60,
+    PASSWORD_RESET_APP_URL: "",
     ...overrides,
   };
 }
@@ -155,6 +159,31 @@ describe("rate limiter", () => {
     assert.equal(second.status, 200);
     assert.equal(third.status, 429);
     assert.equal(body.error?.code, "RATE_LIMITED");
+  });
+
+  it("rate-limits password reset requests after five attempts per minute", async () => {
+    const app = express();
+    app.use(
+      createLimiter({
+        windowMs: 60_000,
+        limit: 5,
+        message: "Too many password reset attempts. Try again shortly.",
+        skip: () => false,
+      }),
+    );
+    app.post("/forgot", (_req, res) => res.json({ success: true }));
+    const http = app.listen(0);
+    const address = http.address();
+    assert.ok(address && typeof address === "object");
+    const url = `http://127.0.0.1:${address.port}/forgot`;
+    const statuses: number[] = [];
+    for (let i = 0; i < 6; i += 1) {
+      const res = await fetch(url, { method: "POST" });
+      statuses.push(res.status);
+    }
+    http.close();
+    assert.deepEqual(statuses.slice(0, 5), [200, 200, 200, 200, 200]);
+    assert.equal(statuses[5], 429);
   });
 });
 

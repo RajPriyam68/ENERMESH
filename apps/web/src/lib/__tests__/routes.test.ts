@@ -48,6 +48,10 @@ describe("isProtectedPath", () => {
     assert.equal(isProtectedPath("/admin/audit"), true);
     assert.equal(isProtectedPath("/admin/reports"), true);
     assert.equal(isProtectedPath("/marketplace"), false);
+    assert.equal(isProtectedPath("/login"), false);
+    assert.equal(isProtectedPath("/register"), false);
+    assert.equal(isProtectedPath("/forgot-password"), false);
+    assert.equal(isProtectedPath("/reset-password"), false);
   });
 });
 

@@ -47,6 +47,10 @@ services:
       CONTRACT_ADDRESS: ${CONTRACT_ADDRESS:-}
       TRUST_PROXY: ${TRUST_PROXY:-false}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      SMTP_URL: ${SMTP_URL:-}
+      SMTP_FROM: ${SMTP_FROM:-EnerMesh <noreply@localhost>}
+      PASSWORD_RESET_TTL_MINUTES: ${PASSWORD_RESET_TTL_MINUTES:-60}
+      PASSWORD_RESET_APP_URL: ${PASSWORD_RESET_APP_URL:-http://localhost:3000}
     ports:
       - "3001:3001"
     healthcheck:
@@ -91,6 +95,22 @@ services:
       retries: 8
       start_period: 20s
     stop_grace_period: 15s
+
+  # Development-only SMTP catcher (official axllent/mailpit). Not started by
+  # default `docker compose up`. Start with:
+  #   docker compose --profile dev up -d mailpit
+  # Host/Windows API (./start.sh): SMTP_URL=smtp://localhost:1025
+  # API container: SMTP_URL=smtp://mailpit:1025
+  # Never use localhost:1025 from inside the API container.
+  # Do not enable this profile or image in production.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    container_name: enermesh-mailpit
+    restart: unless-stopped
+    profiles: ["dev"]
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   enermesh_pgdata:

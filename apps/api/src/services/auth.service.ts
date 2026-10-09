@@ -1,8 +1,10 @@
 import type { User } from "@prisma/client";
 import type { AuthTokens, PublicUser } from "@enermesh/shared";
+import { env } from "../config/env.js";
 import { recordAudit } from "../lib/audit.js";
 import { randomHex, sha256Hex } from "../lib/crypto.js";
 import { refreshExpiryDate, signAccessToken, signRefreshToken, verifyRefreshToken } from "../lib/jwt.js";
+import { buildPasswordResetEmail, passwordResetLink, sendMail } from "../lib/mailer.js";
 import { hashPassword, verifyPassword } from "../lib/password.js";
 import { prisma } from "../lib/prisma.js";
 import { HttpError } from "../middleware/errorHandler.js";
@@ -260,4 +262,113 @@ export async function getPublicUserById(userId: string): Promise<PublicUser> {
     throw new HttpError(404, "USER_NOT_FOUND", "User not found");
   }
   return toPublicUser(user);
+}
+
+const GENERIC_RESET_REQUEST_MESSAGE =
+  "If an account exists for that email, a reset link has been sent.";
+
+export async function requestPasswordReset(
+  input: { email: string },
+  ctx: RequestContext,
+): Promise<{ message: string }> {
+  const email = input.email.trim().toLowerCase();
+  const user = await prisma.user.findUnique({ where: { email } });
+  const rawToken = randomHex(32);
+  const tokenHash = sha256Hex(rawToken);
+
+  if (user?.isActive) {
+    const expiresAt = new Date(Date.now() + env.PASSWORD_RESET_TTL_MINUTES * 60 * 1000);
+    await prisma.$transaction(async (tx) => {
+      await tx.passwordResetToken.updateMany({
+        where: { userId: user.id, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      await tx.passwordResetToken.create({
+        data: { userId: user.id, tokenHash, expiresAt },
+      });
+    });
+
+    try {
+      await sendMail(
+        buildPasswordResetEmail(
+          user.email,
+          passwordResetLink(rawToken),
+          env.PASSWORD_RESET_TTL_MINUTES,
+        ),
+      );
+    } catch {
+      await recordAudit({
+        userId: user.id,
+        action: "ADMIN_ACTION",
+        entityType: "User",
+        entityId: user.id,
+        ipAddress: ctx.ipAddress,
+        metadata: { operation: "password_reset_request", delivery: "failed" },
+      });
+    }
+
+    await recordAudit({
+      userId: user.id,
+      action: "ADMIN_ACTION",
+      entityType: "User",
+      entityId: user.id,
+      ipAddress: ctx.ipAddress,
+      metadata: { operation: "password_reset_request" },
+    });
+  } else {
+    await recordAudit({
+      action: "ADMIN_ACTION",
+      entityType: "User",
+      ipAddress: ctx.ipAddress,
+      metadata: { operation: "password_reset_request", outcome: "unknown_or_inactive" },
+    });
+  }
+
+  return { message: GENERIC_RESET_REQUEST_MESSAGE };
+}
+
+export async function resetPassword(
+  input: { token: string; password: string },
+  ctx: RequestContext,
+): Promise<{ message: string; revokedSessions: number }> {
+  const tokenHash = sha256Hex(input.token);
+  const record = await prisma.passwordResetToken.findUnique({ where: { tokenHash } });
+  if (!record || record.usedAt !== null || record.expiresAt.getTime() <= Date.now()) {
+    throw new HttpError(401, "INVALID_RESET_TOKEN", "Reset link is invalid or has expired");
+  }
+
+  const passwordHash = await hashPassword(input.password);
+
+  const revokedSessions = await prisma.$transaction(async (tx) => {
+    const consumed = await tx.passwordResetToken.updateMany({
+      where: { id: record.id, usedAt: null, expiresAt: { gt: new Date() } },
+      data: { usedAt: new Date() },
+    });
+    if (consumed.count !== 1) {
+      throw new HttpError(401, "INVALID_RESET_TOKEN", "Reset link is invalid or has expired");
+    }
+
+    await tx.user.update({ where: { id: record.userId }, data: { passwordHash } });
+    const revoked = await tx.refreshToken.updateMany({
+      where: { userId: record.userId, revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    await tx.passwordResetToken.updateMany({
+      where: { userId: record.userId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+    await tx.auditLog.create({
+      data: {
+        userId: record.userId,
+        action: "ADMIN_ACTION",
+        entityType: "User",
+        entityId: record.userId,
+        ipAddress: ctx.ipAddress ?? null,
+        metadata: { operation: "password_reset", revokedSessions: revoked.count },
+      },
+    });
+    return revoked.count;
+  });
+
+  return { message: "Password updated. Sign in with your new password.", revokedSessions };
 }

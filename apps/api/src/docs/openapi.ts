@@ -84,10 +84,33 @@ export const openApiDocument = {
       post: {
         summary: "Revoke the current refresh session",
         tags: ["Auth"],
-        security: [{ bearerAuth: [] }],
         responses: {
-          "200": envelope("Session revoked"),
-          "401": envelope("Authentication required"),
+          "200": envelope("Session revoked; cookie cleared even without a token"),
+        },
+      },
+    },
+    "/auth/forgot-password": {
+      post: {
+        summary: "Request a password reset email",
+        tags: ["Auth"],
+        requestBody: jsonBody("email"),
+        responses: {
+          "200": envelope("Generic success whether or not the email exists"),
+          "422": envelope("Validation failed"),
+          "429": envelope("Rate limited"),
+        },
+      },
+    },
+    "/auth/reset-password": {
+      post: {
+        summary: "Set a new password with a single-use reset token",
+        tags: ["Auth"],
+        requestBody: jsonBody("token, password"),
+        responses: {
+          "200": envelope("Password updated and sessions revoked"),
+          "401": envelope("Reset token invalid, used, or expired"),
+          "422": envelope("Validation failed"),
+          "429": envelope("Rate limited"),
         },
       },
     },

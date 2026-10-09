@@ -23,9 +23,9 @@ export default function LoginPage() {
         </Suspense>
       </div>
       <p className="mt-6 text-xs text-muted">
-        Forgot your password? Password reset arrives in a later sprint.{" "}
-        <Link href="/about" className="text-primary hover:underline">
-          Learn more
+        Forgot your password?{" "}
+        <Link href="/forgot-password" className="text-primary hover:underline">
+          Reset it here
         </Link>
       </p>
     </div>

@@ -26,6 +26,12 @@ export function Providers({ children }: { children: ReactNode }) {
     void bootstrap();
   }, [bootstrap]);
 
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      queryClient.clear();
+    }
+  }, [status, queryClient]);
+
   // Refresh shortly before the access token expires so sessions survive navigation.
   useEffect(() => {
     if (status !== "authenticated" || !accessExpiresAt) return;

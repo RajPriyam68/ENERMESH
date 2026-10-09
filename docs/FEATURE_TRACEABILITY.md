@@ -14,6 +14,7 @@ Research question: *How can a renewable-energy marketplace efficiently match dec
 | RBAC (BUYER/SELLER/ADMIN) | S1 | `apps/api/src/middleware/auth.ts`, `apps/api/src/routes/admin.ts` | Cross-role 403 rate = 100% |
 | bcrypt password storage | S1 | `apps/api/src/lib/password.ts` | Plaintext/hash leakage = 0 |
 | Profile + settings + password change | S1 | `apps/api/src/services/user.service.ts`, `apps/web/src/components/auth` | Session invalidation on change |
+| Forgot/reset password | post-S12 | `apps/api/src/services/auth.service.ts`, `apps/web/src/app/forgot-password`, `apps/web/src/app/reset-password` | Enumeration-safe 200; single-use expiring token; sessions revoked |
 | Wallet nonce + signature verify | S1 | `apps/api/src/services/wallet.service.ts`, `apps/web/src/components/wallet/wallet-panel.tsx` | Replay accepted = 0 |
 | Listings + no oversell | S2 | `apps/api/src/services/listing.service.ts`, `packages/shared/src/quantity.ts`, `apps/web/src/app/marketplace` | Oversell attempts blocked; empty catalog stays empty |
 | Bids + persistent matching | S3 | `apps/api/src/services/matching.service.ts`, `packages/shared/src/matching.ts`, `apps/web/src/app/bids` | Partial fill 100 vs 30; concurrent oversell blocked |

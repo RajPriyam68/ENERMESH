@@ -4,6 +4,7 @@ Last updated: 2026-10-06
 Current sprint: **S12 Hybrid DB sync / on-chain listing id persistence** — COMPLETE
 Post-S12: **final hardening pass** — COMPLETE
 Post-hardening: **P0/P1 verification** — COMPLETE (2026-10-06).
+Post-hardening: **final auth release** — logout UX, BUYER/SELLER registration, password reset, admin bootstrap docs.
 Next sprint: none scheduled. Do not start a new sprint unless asked.
 
 ## Protocol
@@ -80,7 +81,8 @@ S12 tests added:
 - Settlement and listing-chain tests mock JSON-RPC; they do not call a live chain.
 - AI tests do not call a live LLM. They assert the unconfigured fallback path.
 - IoT tests do not connect MQTT. They assert labelled HTTP/simulated EnergyHistory rows.
-- Rate limiters skip when `NODE_ENV === "test"` so S0–S9 HTTP tests stay deterministic. Limiter 429 is asserted in `security.test.ts` with `skip: () => false`.
+- Rate limiters skip when `NODE_ENV === "test"` so S0–S9 HTTP tests stay deterministic. Limiter 429 is asserted in `security.test.ts` with `skip: () => false`, including a 5/minute password-reset limiter example.
+- Password reset: `POST /auth/forgot-password` always returns the same 200 body. Tokens are hashed, single-use, and expire after `PASSWORD_RESET_TTL_MINUTES`. Successful reset revokes refresh sessions. Mail is sent with nodemailer over `SMTP_URL`. Development Mailpit (compose profile `dev` only): host/Windows API `smtp://localhost:1025`; API in Docker `smtp://mailpit:1025`; UI `:8025`. Production requires `SMTP_URL` and must not use Mailpit. Delivery failure still returns the generic 200. Raw tokens are not logged.
 - `packages/contracts` `npm test` still compiles; Hardhat Mocha tests run via `npm run contracts:test` / `npx hardhat test`.
 
 ## Research question

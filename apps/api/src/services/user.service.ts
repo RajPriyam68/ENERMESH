@@ -96,11 +96,15 @@ export async function changePassword(
 
   const revokedSessions = await prisma.$transaction(async (tx) => {
     await tx.user.update({ where: { id: userId }, data: { passwordHash } });
-    const revoked = await tx.refreshToken.updateMany({
-      where: { userId, revokedAt: null },
-      data: { revokedAt: new Date() },
-    });
-    await tx.auditLog.create({
+      const revoked = await tx.refreshToken.updateMany({
+        where: { userId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+      await tx.passwordResetToken.updateMany({
+        where: { userId, usedAt: null },
+        data: { usedAt: new Date() },
+      });
+      await tx.auditLog.create({
       data: {
         userId,
         action: "ADMIN_ACTION",

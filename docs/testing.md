@@ -22,9 +22,12 @@
 - Passwords: bcrypt hash/verify, plaintext never stored
 - Crypto helpers: stable hashing, constant-time comparison, random nonce length
 - Wallet challenge message: deterministic, binds address/chain/nonce/timestamp
-- Auth integration: register, duplicate email 409, weak password 422, credential-enumeration safety,
-  refresh rotation and reuse rejection, logout invalidation, RBAC 401/403, profile/settings updates,
-  unknown-field 422, password change with session revocation
+- Auth integration: register BUYER/SELLER, duplicate email 409, weak password 422, credential-enumeration safety,
+  refresh rotation and reuse rejection, logout invalidation, RBAC 401/403 (BUYER/SELLER denied admin/reports),
+  profile/settings updates, unknown-field 422, password change with session revocation, forgot-password
+  identical 200 for existing/unknown email, reset token single-use/expiry/invalid, old password rejected,
+  sessions revoked after reset, reset-request limiter 429, mail transport invoked for existing emails only,
+  delivery failure still returns the generic 200
 - Wallet integration: real secp256k1 signatures, wrong signer rejection, nonce replay rejection,
   cross-account hijack rejection, invalid address 422, unlink
 - Web: open-redirect sanitization and protected-path detection
@@ -110,6 +113,21 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 - Web: listing search params unchanged; publish UI reports txHash to `/listings/:id/on-chain` and never treats a mined wallet receipt as confirmed
 - Hardening: `LISTING_NOT_MAPPED`, `LISTING_MISMATCH`, `TX_HASH_MISMATCH`; min-trade last lot; createdAt/id ties; escrow-blocked cancel; operator `refundTrade`; duplicate email 409 `EMAIL_IN_USE`; limiter 429 `RATE_LIMITED`
 
+## Local Mailpit delivery (development only)
+
+Unit/integration tests inject `setMailSenderForTests` and skip live SMTP when `NODE_ENV=test`. Passing those tests is not proof that Mailpit received mail.
+
+Host commands from the project root (requires Docker on the machine running EnerMesh):
+
+```bash
+docker compose --profile dev up -d mailpit
+docker compose --profile dev ps
+docker compose --profile dev port mailpit 8025
+docker compose --profile dev port mailpit 1025
+```
+
+Set `SMTP_URL=smtp://localhost:1025` when the API runs on the host (`./start.sh`). Set `SMTP_URL=smtp://mailpit:1025` only when the API runs inside Compose. Open `http://localhost:8025` and confirm a real message after `POST /auth/forgot-password`. Do not treat code tests as inbox evidence.
+
 ## Commands
 
 ```bash
@@ -121,4 +139,4 @@ npx hardhat test
 docker compose config
 ```
 
-Do not fabricate passing tests. If Postgres is absent, readiness tests that need the DB must assert degraded behaviour rather than inventing a live database.
+Do not fabricate passing tests. If Postgres is absent, readiness tests that need the DB must assert degraded behaviour rather than inventing a live database. If Docker is absent, do not claim Mailpit delivery succeeded.

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EnergyType } from "../enums.js";
+import { passwordSchema } from "./auth.js";
 
 const energyTypeEnum = z.enum([
   EnergyType.SOLAR,
@@ -35,13 +36,7 @@ export const updateSettingsSchema = z
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1),
-    newPassword: z
-      .string()
-      .min(10, "Password must be at least 10 characters")
-      .max(128)
-      .regex(/[A-Z]/, "Password must include an uppercase letter")
-      .regex(/[a-z]/, "Password must include a lowercase letter")
-      .regex(/[0-9]/, "Password must include a number"),
+    newPassword: passwordSchema,
   })
   .strict()
   .refine((value) => value.currentPassword !== value.newPassword, {

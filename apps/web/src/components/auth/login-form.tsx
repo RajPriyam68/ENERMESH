@@ -17,6 +17,7 @@ export function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const nextPath = sanitizeNextPath(searchParams.get("next"));
+  const resetComplete = searchParams.get("reset") === "1";
   const login = useAuthStore((state) => state.login);
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -41,6 +42,11 @@ export function LoginForm() {
 
   return (
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
+      {resetComplete && !formError ? (
+        <Alert tone="success" role="status" title="Password updated">
+          Sign in with your new password. Previous sessions were signed out.
+        </Alert>
+      ) : null}
       {formError ? (
         <Alert tone="error" role="alert" title="Sign-in failed">
           {formError}
@@ -70,6 +76,12 @@ export function LoginForm() {
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
+
+      <p className="text-center text-sm text-muted">
+        <Link href="/forgot-password" className="text-primary hover:underline">
+          Forgot your password?
+        </Link>
+      </p>
 
       <p className="text-center text-sm text-muted">
         Need an account?{" "}

@@ -108,8 +108,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const token = get().accessToken;
     try {
       await apiRequest("/auth/logout", { method: "POST", token, body: {} });
-    } catch {
-      // Even if the server call fails, drop the local session.
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 401)) {
+        throw error;
+      }
     }
     set({ user: null, accessToken: null, accessExpiresAt: null, status: "unauthenticated", error: null });
   },

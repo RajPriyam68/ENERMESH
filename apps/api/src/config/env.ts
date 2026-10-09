@@ -33,6 +33,10 @@ const envSchema = z.object({
   MQTT_URL: z.string().optional().default(""),
   MQTT_USERNAME: z.string().optional().default(""),
   MQTT_PASSWORD: z.string().optional().default(""),
+  SMTP_URL: z.string().optional().default(""),
+  SMTP_FROM: z.string().optional().default("EnerMesh <noreply@localhost>"),
+  PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().min(5).max(1440).default(60),
+  PASSWORD_RESET_APP_URL: z.string().optional().default(""),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -14,7 +14,7 @@ const nav = [
 export function SiteHeader() {
   return (
     <header className="border-b border-border bg-card">
-      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3">
+      <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-3">
         <Link href="/" className="font-semibold tracking-tight text-primary">
           EnerMesh
         </Link>
