@@ -117,7 +117,7 @@ Integration tests skip automatically when PostgreSQL is unreachable, rather than
 
 Unit/integration tests inject `setMailSenderForTests` and skip live SMTP when `NODE_ENV=test`. Passing those tests is not proof that Mailpit received mail.
 
-Host commands from the project root (requires Docker on the machine running EnerMesh):
+Host commands from the project root (requires Docker on the machine running PeerMatch):
 
 ```bash
 docker compose --profile dev up -d mailpit

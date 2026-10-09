@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AdminAuditLog } from "@/components/admin/audit-log";
 import { RequireRole } from "@/components/auth/require-role";
 
-export const metadata: Metadata = { title: "Audit logs — EnerMesh" };
+export const metadata: Metadata = { title: "Audit logs — PeerMatch" };
 
 export default function AdminAuditPage() {
   return (

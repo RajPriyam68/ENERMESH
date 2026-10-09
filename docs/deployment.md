@@ -1,6 +1,6 @@
 # Deployment
 
-Provider-agnostic. Changing host requires environment variables only. This document prepares EnerMesh for production; it does not deploy to a live provider.
+Provider-agnostic. Changing host requires environment variables only. This document prepares PeerMatch for production; it does not deploy to a live provider.
 
 Blockchain confirmation is never claimed from a MetaMask mined receipt. The API sets `CONFIRMED` only after receipt and event verification on the configured RPC (`POST /trades/report`).
 
@@ -46,13 +46,13 @@ Password reset mail:
 | Variable | Purpose |
 | --- | --- |
 | `SMTP_URL` | Nodemailer SMTP/SMTPS URL. Required in production. Host/Windows Mailpit: `smtp://localhost:1025`. API in Docker Compose: `smtp://mailpit:1025` |
-| `SMTP_FROM` | From header, e.g. `EnerMesh <noreply@localhost>` |
+| `SMTP_FROM` | From header, e.g. `PeerMatch <noreply@localhost>` |
 | `PASSWORD_RESET_TTL_MINUTES` | Token lifetime, default 60 |
 | `PASSWORD_RESET_APP_URL` | Public web origin in the reset link; falls back to `WEB_ORIGIN` |
 
 Local Mailpit (development only, compose profile `dev`). Not started by default `docker compose up`. Do not use Mailpit as a production mail endpoint.
 
-From the EnerMesh project root:
+From the PeerMatch project root:
 
 ```bash
 # Start Mailpit
@@ -84,7 +84,7 @@ SMTP host depends on where the API process runs. Never use `localhost:1025` from
 | Host / Windows (`./start.sh`, `npm run dev:api`) | `smtp://localhost:1025` |
 | Inside Docker Compose (`enermesh-api` + Mailpit on profile `dev`) | `smtp://mailpit:1025` |
 
-Set `SMTP_FROM=EnerMesh <noreply@localhost>` and keep `PASSWORD_RESET_TTL_MINUTES` / `PASSWORD_RESET_APP_URL`. Switch production providers by changing `SMTP_URL` only.
+Set `SMTP_FROM=PeerMatch <noreply@localhost>` and keep `PASSWORD_RESET_TTL_MINUTES` / `PASSWORD_RESET_APP_URL`. Switch production providers by changing `SMTP_URL` only.
 
 Genuine SMTP check after Mailpit is up (host/Windows):
 
@@ -93,9 +93,9 @@ python3 - <<'PY'
 import smtplib
 from email.message import EmailMessage
 msg = EmailMessage()
-msg["From"] = "EnerMesh <noreply@localhost>"
+msg["From"] = "PeerMatch <noreply@localhost>"
 msg["To"] = "buyer@example.test"
-msg["Subject"] = "EnerMesh Mailpit connectivity test"
+msg["Subject"] = "PeerMatch Mailpit connectivity test"
 msg.set_content("If this appears in Mailpit, SMTP port 1025 is reachable from the host.")
 with smtplib.SMTP("127.0.0.1", 1025, timeout=10) as smtp:
     smtp.send_message(msg)
@@ -105,7 +105,7 @@ PY
 curl -sS http://localhost:8025/api/v1/messages
 ```
 
-Success evidence: SMTP send prints `smtp send ok`; Mailpit UI or `/api/v1/messages` contains subject `EnerMesh Mailpit connectivity test`. Then submit Forgot password for an existing account and confirm a second message with subject `Reset your EnerMesh password`, From `EnerMesh <noreply@localhost>`, and a reset link under `PASSWORD_RESET_APP_URL`.
+Success evidence: SMTP send prints `smtp send ok`; Mailpit UI or `/api/v1/messages` contains subject `PeerMatch Mailpit connectivity test`. Then submit Forgot password for an existing account and confirm a second message with subject `Reset your PeerMatch password`, From `PeerMatch <noreply@localhost>`, and a reset link under `PASSWORD_RESET_APP_URL`.
 
 Admin bootstrap is out-of-band: `ADMIN_EMAIL` / `ADMIN_PASSWORD` / optional `ADMIN_DISPLAY_NAME` with `npm run seed:admin`.
 

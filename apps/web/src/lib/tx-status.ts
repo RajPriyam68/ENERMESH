@@ -13,7 +13,7 @@ export function copyForPhase(phase: WalletTxPhase): TxUiCopy | null {
     case "wrong_network":
       return {
         title: "Wrong network",
-        body: "Switch to the configured chain before signing. EnerMesh does not send transactions on other networks.",
+        body: "Switch to the configured chain before signing. PeerMatch does not send transactions on other networks.",
         tone: "warning",
       };
     case "review":

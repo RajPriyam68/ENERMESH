@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireRole } from "@/components/auth/require-role";
 import { PlaceBidForm } from "@/components/bids/place-bid-form";
 
-export const metadata: Metadata = { title: "Place bid — EnerMesh" };
+export const metadata: Metadata = { title: "Place bid — PeerMatch" };
 
 export default function NewBidPage() {
   return (

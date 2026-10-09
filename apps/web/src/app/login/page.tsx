@@ -5,7 +5,7 @@ import { GuestOnly } from "@/components/auth/guest-only";
 import { LoginForm } from "@/components/auth/login-form";
 import { Spinner } from "@/components/ui/spinner";
 
-export const metadata: Metadata = { title: "Log in — EnerMesh" };
+export const metadata: Metadata = { title: "Log in — PeerMatch" };
 
 export default function LoginPage() {
   return (

@@ -39,18 +39,18 @@ export function buildPasswordResetEmail(
   resetUrl: string,
   ttlMinutes: number,
 ): OutboundEmail {
-  const subject = "Reset your EnerMesh password";
+  const subject = "Reset your PeerMatch password";
   const text = [
-    "EnerMesh password reset",
+    "PeerMatch password reset",
     "",
-    "We received a request to reset the password for your EnerMesh account.",
+    "We received a request to reset the password for your PeerMatch account.",
     "Open the link below to choose a new password. The link expires in",
     `${ttlMinutes} minutes and can be used once.`,
     "",
     resetUrl,
     "",
     "If you did not request this, you can ignore this message. Your password will stay the same.",
-    "EnerMesh will never ask you to send your password by email.",
+    "PeerMatch will never ask you to send your password by email.",
   ].join("\n");
 
   const html = `<!DOCTYPE html>
@@ -62,10 +62,10 @@ export function buildPasswordResetEmail(
           <table role="presentation" width="560" cellspacing="0" cellpadding="0" style="background:#111827;border:1px solid #1e293b;border-radius:12px;padding:32px;">
             <tr>
               <td>
-                <p style="margin:0 0 8px;font-size:13px;letter-spacing:0.08em;color:#34d399;text-transform:uppercase;">EnerMesh</p>
+                <p style="margin:0 0 8px;font-size:13px;letter-spacing:0.08em;color:#34d399;text-transform:uppercase;">PeerMatch</p>
                 <h1 style="margin:0 0 16px;font-size:22px;color:#f8fafc;">Reset your password</h1>
                 <p style="margin:0 0 16px;font-size:15px;line-height:1.5;color:#cbd5e1;">
-                  We received a request to reset the password for your EnerMesh account.
+                  We received a request to reset the password for your PeerMatch account.
                   Use the button below to choose a new password. This link expires in
                   <strong style="color:#f8fafc;">${ttlMinutes} minutes</strong> and can be used once.
                 </p>
@@ -81,7 +81,7 @@ export function buildPasswordResetEmail(
                 </p>
                 <p style="margin:0;font-size:12px;line-height:1.5;color:#64748b;">
                   If you did not request this, ignore this email. Your password will stay the same.
-                  EnerMesh will never ask you to send your password by email.
+                  PeerMatch will never ask you to send your password by email.
                 </p>
               </td>
             </tr>

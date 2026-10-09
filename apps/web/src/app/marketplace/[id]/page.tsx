@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ListingDetail } from "@/components/marketplace/listing-detail";
 
-export const metadata: Metadata = { title: "Listing — EnerMesh" };
+export const metadata: Metadata = { title: "Listing — PeerMatch" };
 
 export default async function ListingPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

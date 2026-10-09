@@ -4,14 +4,14 @@ import { GuestOnly } from "@/components/auth/guest-only";
 import { ForgotPasswordForm } from "@/components/auth/forgot-password-form";
 import { Spinner } from "@/components/ui/spinner";
 
-export const metadata: Metadata = { title: "Forgot password — EnerMesh" };
+export const metadata: Metadata = { title: "Forgot password — PeerMatch" };
 
 export default function ForgotPasswordPage() {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-16">
       <h1 className="text-2xl font-semibold">Forgot password</h1>
       <p className="mt-2 text-sm text-muted">
-        Enter the email on your account. If it matches an EnerMesh account, we will send a single-use reset link
+        Enter the email on your account. If it matches a PeerMatch account, we will send a single-use reset link
         that expires shortly.
       </p>
       <div className="mt-6">

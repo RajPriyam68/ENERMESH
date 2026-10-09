@@ -153,7 +153,7 @@ export function PublishListingOnChain({ listing }: { listing: ListingPublic }) {
       <div>
         <h3 className="font-medium">Publish listing on-chain</h3>
         <p className="mt-1 text-sm text-muted">
-          Records remaining energy and price on EnerMeshMarketplace. A mined wallet receipt is not confirmation.
+          Records remaining energy and price on the marketplace contract. A mined wallet receipt is not confirmation.
         </p>
       </div>
       <dl className="grid gap-2 text-sm sm:grid-cols-2">

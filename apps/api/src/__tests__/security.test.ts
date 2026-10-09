@@ -54,7 +54,7 @@ function productionEnv(overrides: Partial<Env> = {}): Env {
     MQTT_USERNAME: "",
     MQTT_PASSWORD: "",
     SMTP_URL: "",
-    SMTP_FROM: "EnerMesh <noreply@localhost>",
+    SMTP_FROM: "PeerMatch <noreply@localhost>",
     PASSWORD_RESET_TTL_MINUTES: 60,
     PASSWORD_RESET_APP_URL: "",
     ...overrides,

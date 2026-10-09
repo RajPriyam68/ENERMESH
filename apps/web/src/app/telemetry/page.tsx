@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { EnergyHistoryPanel } from "@/components/iot/energy-history";
 
-export const metadata: Metadata = { title: "Telemetry — EnerMesh" };
+export const metadata: Metadata = { title: "Telemetry — PeerMatch" };
 
 export default function TelemetryPage() {
   return (

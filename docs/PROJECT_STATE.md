@@ -1,4 +1,4 @@
-# EnerMesh project state
+# PeerMatch project state
 
 Last updated: 2026-10-06
 Current sprint: **S12 Hybrid DB sync / on-chain listing id persistence** — COMPLETE

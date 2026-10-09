@@ -4,7 +4,7 @@ import { GuestOnly } from "@/components/auth/guest-only";
 import { RegisterForm } from "@/components/auth/register-form";
 import { Spinner } from "@/components/ui/spinner";
 
-export const metadata: Metadata = { title: "Register — EnerMesh" };
+export const metadata: Metadata = { title: "Register — PeerMatch" };
 
 export default function RegisterPage() {
   return (

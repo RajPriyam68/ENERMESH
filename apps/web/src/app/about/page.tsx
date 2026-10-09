@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "About EnerMesh",
+  title: "About PeerMatch",
 };
 
 export default function AboutPage() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-12">
-      <h1 className="text-3xl font-semibold">About EnerMesh</h1>
+      <h1 className="text-3xl font-semibold">About PeerMatch</h1>
+      <p className="text-sm font-medium text-primary">Peer-to-Peer Renewable Energy Marketplace</p>
       <p className="text-muted">
-        EnerMesh is a B.Tech final-year project: a production-quality peer-to-peer renewable energy
+        PeerMatch is a B.Tech final-year project: a production-quality peer-to-peer renewable energy
         marketplace. Prosumers list surplus energy; buyers bid; a deterministic backend matcher
         produces partial or full matches; settlement evidence is recorded on an EVM network.
+      </p>
+      <p className="text-sm text-muted">
+        Academic title: PeerMatch: A Blockchain-Based Peer-to-Peer Renewable Energy Marketplace with
+        Intelligent Matching, Dynamic Price Discovery, and Transparent Settlement.
       </p>
       <h2 className="text-xl font-semibold">Research question</h2>
       <p className="text-muted">

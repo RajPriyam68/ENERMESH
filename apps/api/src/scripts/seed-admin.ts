@@ -11,7 +11,7 @@ import { prisma } from "../lib/prisma.js";
 async function main() {
   const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
   const password = process.env.ADMIN_PASSWORD;
-  const displayName = process.env.ADMIN_DISPLAY_NAME?.trim() || "EnerMesh Admin";
+  const displayName = process.env.ADMIN_DISPLAY_NAME?.trim() || "PeerMatch Admin";
 
   if (!email || !password) {
     throw new Error("ADMIN_EMAIL and ADMIN_PASSWORD are required");

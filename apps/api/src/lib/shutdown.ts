@@ -23,9 +23,9 @@ export function installShutdownHandlers(httpServer: HttpServer, timeoutMs = DEFA
   const shutdown = async (signal: string) => {
     if (shuttingDown) return;
     shuttingDown = true;
-    process.stdout.write(`EnerMesh API shutting down (${signal})\n`);
+    process.stdout.write(`PeerMatch API shutting down (${signal})\n`);
     const failSafe = setTimeout(() => {
-      process.stderr.write("EnerMesh API shutdown timed out\n");
+      process.stderr.write("PeerMatch API shutdown timed out\n");
       process.exit(1);
     }, timeoutMs);
     failSafe.unref();
@@ -36,7 +36,7 @@ export function installShutdownHandlers(httpServer: HttpServer, timeoutMs = DEFA
       process.exit(0);
     } catch (error) {
       process.stderr.write(
-        `EnerMesh API shutdown error: ${error instanceof Error ? error.message : "unknown"}\n`,
+        `PeerMatch API shutdown error: ${error instanceof Error ? error.message : "unknown"}\n`,
       );
       process.exit(1);
     }

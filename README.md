@@ -1,12 +1,12 @@
-# EnerMesh
+# PeerMatch
 
 **Connect Energy. Match Demand. Trade with Trust.**
 
-EnerMesh is a blockchain-based peer-to-peer renewable energy marketplace. Prosumers list surplus energy, buyers bid, a deterministic backend matcher produces partial or full matches, and settlement evidence is recorded on an EVM network (Polygon Amoy by default).
+PeerMatch is a blockchain-based peer-to-peer renewable energy marketplace. Prosumers list surplus energy, buyers bid, a deterministic backend matcher produces partial or full matches, and settlement evidence is recorded on an EVM network (Polygon Amoy by default).
 
 Blockchain stores **digital trade evidence**. It does not move physical electricity.
 
-Academic title: *EnerMesh: A Blockchain-Based Peer-to-Peer Renewable Energy Marketplace with Intelligent Matching, Dynamic Price Discovery, and Transparent Settlement.*
+Academic title: *PeerMatch: A Blockchain-Based Peer-to-Peer Renewable Energy Marketplace with Intelligent Matching, Dynamic Price Discovery, and Transparent Settlement.*
 
 ## Current sprint
 

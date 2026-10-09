@@ -69,7 +69,7 @@ export function createApp() {
     res.json({
       success: true,
       data: {
-        name: "EnerMesh API",
+        name: "PeerMatch API",
         prefix: API_PREFIX,
         docs: `${API_PREFIX}/docs`,
         health: `${API_PREFIX}/health`,

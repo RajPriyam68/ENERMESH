@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireRole } from "@/components/auth/require-role";
 import { BidDetail } from "@/components/bids/bid-detail";
 
-export const metadata: Metadata = { title: "Bid — EnerMesh" };
+export const metadata: Metadata = { title: "Bid — PeerMatch" };
 
 export default async function BidPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

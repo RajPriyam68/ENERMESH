@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AdvisorPanel } from "@/components/ai/advisor-panel";
 import { RequireAuth } from "@/components/auth/require-auth";
 
-export const metadata: Metadata = { title: "Advisor — EnerMesh" };
+export const metadata: Metadata = { title: "Advisor — PeerMatch" };
 
 export default function AdvisorPage() {
   return (

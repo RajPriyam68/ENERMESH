@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { MatchList } from "@/components/matches/match-list";
 
-export const metadata: Metadata = { title: "Matches — EnerMesh" };
+export const metadata: Metadata = { title: "Matches — PeerMatch" };
 
 export default function MatchesPage() {
   return (

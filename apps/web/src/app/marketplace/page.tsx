@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { MarketplaceCatalog } from "@/components/marketplace/catalog";
 
 export const metadata: Metadata = {
-  title: "Marketplace — EnerMesh",
+  title: "Marketplace — PeerMatch",
 };
 
 export default function MarketplacePage() {

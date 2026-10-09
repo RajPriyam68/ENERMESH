@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AdminUserTable } from "@/components/admin/user-table";
 import { RequireRole } from "@/components/auth/require-role";
 
-export const metadata: Metadata = { title: "Admin users — EnerMesh" };
+export const metadata: Metadata = { title: "Admin users — PeerMatch" };
 
 export default function AdminUsersPage() {
   return (

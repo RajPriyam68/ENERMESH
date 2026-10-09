@@ -10,7 +10,7 @@ export function buildWalletChallenge(input: {
   issuedAt: Date;
 }): string {
   return [
-    "EnerMesh wallet verification",
+    "PeerMatch wallet verification",
     "",
     "Sign this message to prove you control this wallet.",
     "This signature does not trigger a blockchain transaction and costs no gas.",

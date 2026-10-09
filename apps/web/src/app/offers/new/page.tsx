@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireRole } from "@/components/auth/require-role";
 import { OfferForm } from "@/components/offers/offer-form";
 
-export const metadata: Metadata = { title: "Publish offer — EnerMesh" };
+export const metadata: Metadata = { title: "Publish offer — PeerMatch" };
 
 export default function NewOfferPage() {
   return (

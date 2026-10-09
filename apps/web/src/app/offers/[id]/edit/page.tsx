@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireRole } from "@/components/auth/require-role";
 import { EditOffer } from "@/components/offers/edit-offer";
 
-export const metadata: Metadata = { title: "Edit offer — EnerMesh" };
+export const metadata: Metadata = { title: "Edit offer — PeerMatch" };
 
 export default async function EditOfferPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;

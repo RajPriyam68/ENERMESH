@@ -48,7 +48,7 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-false}
       RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
       SMTP_URL: ${SMTP_URL:-}
-      SMTP_FROM: ${SMTP_FROM:-EnerMesh <noreply@localhost>}
+      SMTP_FROM: ${SMTP_FROM:-PeerMatch <noreply@localhost>}
       PASSWORD_RESET_TTL_MINUTES: ${PASSWORD_RESET_TTL_MINUTES:-60}
       PASSWORD_RESET_APP_URL: ${PASSWORD_RESET_APP_URL:-http://localhost:3000}
     ports:

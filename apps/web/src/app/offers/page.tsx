@@ -4,7 +4,7 @@ import { RequireRole } from "@/components/auth/require-role";
 import { SellerOffers } from "@/components/offers/seller-offers";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = { title: "My offers — EnerMesh" };
+export const metadata: Metadata = { title: "My offers — PeerMatch" };
 
 export default function OffersPage() {
   return (

@@ -166,7 +166,7 @@ export function WalletPanel() {
       {chainId !== null && chainId !== EXPECTED_CHAIN_ID ? (
         <Alert tone="warning" role="alert">
           <p>
-            Your wallet is on chain ID {chainId}. EnerMesh expects {EXPECTED_CHAIN_NAME} (
+            Your wallet is on chain ID {chainId}. PeerMatch expects {EXPECTED_CHAIN_NAME} (
             {EXPECTED_CHAIN_ID}).
           </p>
           <Button variant="outline" size="sm" className="mt-2" onClick={switchNetwork}>

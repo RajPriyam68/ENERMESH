@@ -3,7 +3,7 @@ import { AdvisorPanel } from "@/components/ai/advisor-panel";
 import { AnalyticsDashboard } from "@/components/analytics/dashboard";
 import { RequireAuth } from "@/components/auth/require-auth";
 
-export const metadata: Metadata = { title: "Dashboard — EnerMesh" };
+export const metadata: Metadata = { title: "Dashboard — PeerMatch" };
 
 export default function DashboardPage() {
   return (

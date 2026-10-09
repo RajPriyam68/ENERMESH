@@ -8,7 +8,7 @@ if [ ! -f .env ]; then
   cp .env.example .env
 fi
 
-echo "Starting EnerMesh API on :3001"
+echo "Starting PeerMatch API on :3001"
 npm run dev:api &
 API_PID=$!
 
@@ -17,5 +17,5 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-echo "Starting EnerMesh web on :3000 (preview entrypoint; /api proxied to API)"
+echo "Starting PeerMatch web on :3000 (preview entrypoint; /api proxied to API)"
 npm run dev:web

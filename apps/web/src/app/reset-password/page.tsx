@@ -4,7 +4,7 @@ import { GuestOnly } from "@/components/auth/guest-only";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 import { Spinner } from "@/components/ui/spinner";
 
-export const metadata: Metadata = { title: "Reset password — EnerMesh" };
+export const metadata: Metadata = { title: "Reset password — PeerMatch" };
 
 export default function ResetPasswordPage() {
   return (

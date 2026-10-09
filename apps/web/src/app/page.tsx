@@ -23,7 +23,7 @@ export default async function HomePage() {
       <Hero />
       <section className="mx-auto w-full max-w-6xl space-y-10 px-4 py-12">
         <div>
-          <h2 className="text-xl font-semibold">Why EnerMesh</h2>
+          <h2 className="text-xl font-semibold">Why PeerMatch</h2>
           <div className="mt-4 grid gap-4 md:grid-cols-3">
             <article className="rounded-lg border border-border bg-card p-5">
               <h3 className="font-medium">Transparent matching</h3>

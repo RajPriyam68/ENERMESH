@@ -9,8 +9,8 @@ if [ ! -f .env ]; then
   exit 1
 fi
 
-echo "EnerMesh API: applying Prisma migrations"
+echo "PeerMatch API: applying Prisma migrations"
 npm run db:deploy
 
-echo "EnerMesh API: starting production server"
+echo "PeerMatch API: starting production server"
 exec npm run start:api

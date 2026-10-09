@@ -11,6 +11,6 @@ installShutdownHandlers(httpServer);
 
 httpServer.listen(env.API_PORT, env.API_HOST, () => {
   process.stdout.write(
-    `EnerMesh API listening on http://${env.API_HOST}:${env.API_PORT} (sprint S12)\n`,
+    `PeerMatch API listening on http://${env.API_HOST}:${env.API_PORT} (sprint S12)\n`,
   );
 });

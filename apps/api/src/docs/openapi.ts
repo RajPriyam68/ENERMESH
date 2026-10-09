@@ -12,7 +12,7 @@ const jsonBody = (description: string) => ({
 export const openApiDocument = {
   openapi: "3.0.3",
   info: {
-    title: "EnerMesh API",
+    title: "PeerMatch API",
     version: "0.1.0",
     description:
       "Peer-to-peer renewable energy marketplace API. Sprint 12 persists a verified on-chain listing id after ListingCreated receipt/event checks. Empty marketplace volume stays labelled 0. REST remains the source of truth.",

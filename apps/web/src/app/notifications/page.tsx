@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { NotificationInbox } from "@/components/notifications/inbox";
 
-export const metadata: Metadata = { title: "Notifications — EnerMesh" };
+export const metadata: Metadata = { title: "Notifications — PeerMatch" };
 
 export default function NotificationsPage() {
   return (

@@ -48,7 +48,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     });
   } catch (error) {
     if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new ApiError(0, "NETWORK_ERROR", "Unable to reach the EnerMesh API. Check your connection.");
+    throw new ApiError(0, "NETWORK_ERROR", "Unable to reach the PeerMatch API. Check your connection.");
   }
 
   const text = await res.text();

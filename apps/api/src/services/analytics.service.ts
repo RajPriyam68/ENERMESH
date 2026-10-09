@@ -203,7 +203,7 @@ export async function getAnalytics(
             "share",
             DataSourceLabel.ACTUAL,
             DataQuality.HIGH,
-            "All EnerMesh energy types are renewable. Share is confirmed kWh / confirmed kWh.",
+            "All PeerMatch energy types are renewable. Share is confirmed kWh / confirmed kWh.",
           ),
     estimatedCarbonSavingsKg: carbonMetric(energyTraded),
     byEnergyType: breakdown(byType),

@@ -6,9 +6,9 @@ import { Providers } from "@/components/providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "EnerMesh — Trade Renewable Energy Directly",
+  title: "PeerMatch — Trade Renewable Energy Directly",
   description:
-    "A blockchain-based peer-to-peer renewable energy marketplace with intelligent matching and transparent settlement.",
+    "Peer-to-Peer Renewable Energy Marketplace. Connect Energy. Match Demand. Trade with Trust.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

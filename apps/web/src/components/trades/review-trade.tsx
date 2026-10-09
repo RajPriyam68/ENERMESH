@@ -277,7 +277,7 @@ export function ReviewTrade({ match, action }: { match: MatchPublic; action: Tra
 
       {!contractReady ? (
         <Alert tone="warning" role="alert" title="Contract address missing">
-          Set NEXT_PUBLIC_CONTRACT_ADDRESS to the deployed EnerMeshMarketplace. Nothing is sent until it is configured.
+          Set NEXT_PUBLIC_CONTRACT_ADDRESS to the deployed marketplace contract. Nothing is sent until it is configured.
         </Alert>
       ) : null}
 

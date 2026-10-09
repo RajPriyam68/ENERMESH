@@ -6,12 +6,12 @@ export function Hero() {
     <section className="border-b border-border bg-card">
       <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-16 md:grid-cols-[1.2fr_0.8fr] md:items-center">
         <div className="space-y-5">
-          <p className="text-sm font-medium uppercase tracking-wide text-primary">P2P renewable energy marketplace</p>
+          <p className="text-sm font-medium uppercase tracking-wide text-primary">Peer-to-Peer Renewable Energy Marketplace</p>
           <h1 className="text-3xl font-semibold leading-tight tracking-tight md:text-5xl">
             Trade Renewable Energy Directly.
           </h1>
           <p className="max-w-xl text-muted">
-            EnerMesh matches surplus solar, wind, and other renewables to local demand with deterministic
+            PeerMatch matches surplus solar, wind, and other renewables to local demand with deterministic
             matching and independently verifiable blockchain settlement. Blockchain records digital trade
             evidence — not physical electricity.
           </p>

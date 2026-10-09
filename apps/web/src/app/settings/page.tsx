@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { RequireAuth } from "@/components/auth/require-auth";
 import { SettingsView } from "@/components/auth/settings-view";
 
-export const metadata: Metadata = { title: "Settings — EnerMesh" };
+export const metadata: Metadata = { title: "Settings — PeerMatch" };
 
 export default function SettingsPage() {
   return (

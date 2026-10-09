@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ProfileView } from "@/components/auth/profile-view";
 import { RequireAuth } from "@/components/auth/require-auth";
 
-export const metadata: Metadata = { title: "Profile — EnerMesh" };
+export const metadata: Metadata = { title: "Profile — PeerMatch" };
 
 export default function ProfilePage() {
   return (

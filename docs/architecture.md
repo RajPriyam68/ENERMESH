@@ -2,7 +2,7 @@
 
 ## Purpose
 
-EnerMesh connects energy **sellers** (prosumers with surplus kWh) and **buyers**. The API owns matching, quantity integrity, and settlement verification. The chain stores a minimal, independently verifiable record of finalized trades.
+PeerMatch connects energy **sellers** (prosumers with surplus kWh) and **buyers**. The API owns matching, quantity integrity, and settlement verification. The chain stores a minimal, independently verifiable record of finalized trades.
 
 ## Runtime topology
 

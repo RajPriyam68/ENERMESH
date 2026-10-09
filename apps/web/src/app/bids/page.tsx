@@ -4,7 +4,7 @@ import { RequireRole } from "@/components/auth/require-role";
 import { BuyerBids } from "@/components/bids/buyer-bids";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = { title: "My bids — EnerMesh" };
+export const metadata: Metadata = { title: "My bids — PeerMatch" };
 
 export default function BidsPage() {
   return (
